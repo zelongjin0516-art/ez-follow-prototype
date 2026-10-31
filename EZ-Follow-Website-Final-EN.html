@@ -30,6 +30,13 @@
   .sidebar-foot{padding:12px 20px 4px;font-size:11px;color:var(--muted);}
   /* Main */
   .main{flex:1;padding:26px 34px;max-width:1180px;}
+  [hidden]{display:none!important;}
+  .prototype-view{padding:14px 16px;margin-bottom:18px;border:1px solid var(--line);border-radius:8px;background:var(--card);}
+  .prototype-view-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .prototype-view label{font-size:13px;font-weight:600;}
+  .prototype-view select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;max-width:100%;background:var(--card);color:var(--ink);}
+  .prototype-view small{display:block;margin-top:8px;color:var(--sub);font-size:11.5px;line-height:1.5;}
+  #prototype-view-status{font-size:12px;color:var(--gold-dark);margin-top:8px;}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
   .topbar-right{display:flex;align-items:center;gap:12px;}
   .bell-btn-desktop{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);position:relative;flex-shrink:0;}
@@ -395,11 +402,22 @@
     <div class="nav-item" data-nav="contacts"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="8.5" r="2.3"/><path d="M15.8 14.2a4.8 4.8 0 0 1 4.9 5.6"/></svg></span>People</div>
     <div class="sidebar-foot-nav">
       <div class="nav-item" data-nav="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1h-.2a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.6v-.2a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg></span>Settings</div>
-      <div class="sidebar-foot">Emily Chen<br>HR Manager</div>
+      <div class="sidebar-foot" id="workspace-profile">Emily Chen<br>HR Manager</div>
     </div>
   </div>
 
   <div class="main">
+    <section class="prototype-view" aria-label="Prototype view simulation">
+      <div class="prototype-view-controls">
+        <label for="prototype-view-select">View as</label>
+        <select id="prototype-view-select" onchange="setPrototypeView(this.value)">
+          <option value="hr">HR · Emily Chen</option>
+          <option value="law-firm">Law Firm Partner · Alex Morgan</option>
+        </select>
+      </div>
+      <small>Prototype view simulation with fictional data. This filters the interface only; all sample records remain in this file. No backend access control.</small>
+      <div id="prototype-view-status" role="status" aria-live="polite">HR view · All cases</div>
+    </section>
     <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
       <div class="bell-btn-desktop" onclick="showScreen('notifications')" title="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 1.8 6.2 1.8 6.2H4.2S6 14 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
@@ -872,6 +890,13 @@
 
 <script>
 function showScreen(name){
+  if(prototypeView==='law-firm' && !['dashboard','cases','case-detail','settings'].includes(name)){
+    name='cases';
+  }
+  if(name==='settings' && prototypeView==='law-firm'){
+    document.querySelectorAll('.settings-nav-item').forEach(item=>item.classList.toggle('active',item.dataset.set==='roles'));
+    document.querySelectorAll('.settings-section').forEach(section=>section.classList.toggle('active',section.id==='set-roles'));
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -893,6 +918,7 @@ function bnavGo(name){
 }
 function toggleMoreSheet(force){
   const el = document.getElementById('more-sheet-overlay');
+  if(!el) return; // The desktop prototype has no mobile More sheet.
   const open = typeof force==='boolean' ? force : !el.classList.contains('open');
   el.classList.toggle('open', open);
 }
@@ -950,6 +976,49 @@ const casesData = {
 };
 let newCaseCounter = 0;
 
+/* ---- Prototype view scope: client-side simulation, not authentication ---- */
+let prototypeView = 'hr';
+const DEMO_PARTNER_ID = 'alex-morgan';
+const demoPartners = { 'alex-morgan':'Alex Morgan', 'jordan-lee':'Jordan Lee' };
+// These are fictional assignments, independent of the HR task owner.
+const sampleAssignments = {
+  c1:'alex-morgan', c2:'alex-morgan', c3:'jordan-lee', c4:'jordan-lee',
+  c5:'jordan-lee', c6:'jordan-lee', c7:'alex-morgan', c8:null
+};
+Object.entries(sampleAssignments).forEach(([id,partner])=>{ casesData[id].lawFirmPartnerId=partner; });
+function canViewCase(id){
+  const record=casesData[id];
+  return !!record && (prototypeView==='hr' || record.lawFirmPartnerId===DEMO_PARTNER_ID);
+}
+function visibleCaseIds(){ return Object.keys(casesData).filter(canViewCase); }
+function partnerName(record){ return demoPartners[record.lawFirmPartnerId] || 'Unassigned'; }
+/* ---- End prototype view scope ---- */
+
+function setPrototypeView(view){
+  prototypeView=view==='law-firm' ? 'law-firm' : 'hr';
+  const partner=prototypeView==='law-firm';
+  document.getElementById('prototype-view-select').value=prototypeView;
+  document.getElementById('workspace-profile').innerHTML=partner ? 'Alex Morgan<br>Law Firm Partner · Demo' : 'Emily Chen<br>HR Manager';
+  document.querySelector('#screen-dashboard h1').textContent=partner ? 'Your cases, Alex' : 'Good afternoon, Emily';
+  document.getElementById('prototype-view-status').textContent=partner ? 'Alex Morgan view · Assigned cases only' : 'HR view · All cases';
+  document.querySelectorAll('[data-nav]').forEach(item=>{
+    item.hidden=partner && !['dashboard','cases','settings'].includes(item.dataset.nav);
+  });
+  const moreButton=document.getElementById('bnav-more');
+  if(moreButton) moreButton.hidden=partner;
+  document.querySelectorAll('[onclick="openWizard()"],.bell-btn-desktop').forEach(item=>{ item.hidden=partner; });
+  document.querySelectorAll('.settings-nav-item').forEach(item=>{ item.hidden=partner && item.dataset.set!=='roles'; });
+  document.getElementById('case-search').value='';
+  document.getElementById('case-filter-type').value='all';
+  document.getElementById('case-filter-status').value='all';
+  closeWizard();
+  toggleMoreSheet(false);
+  currentCaseId=null;
+  renderCaseList();
+  renderDashboard();
+  showScreen('cases');
+}
+
 function tagClass(sc){ return 'tag '+sc; }
 
 function renderCaseList(){
@@ -960,7 +1029,7 @@ function renderCaseList(){
   const ft = typeEl ? typeEl.value : 'all';
   const fs = statusEl ? statusEl.value : 'all';
   const container = document.getElementById('case-list-container');
-  const ids = Object.keys(casesData);
+  const ids = visibleCaseIds();
   const filtered = ids.filter(id=>{
     const c = casesData[id];
     if(ft!=='all' && c.type!==ft) return false;
@@ -968,7 +1037,7 @@ function renderCaseList(){
     if(q && !(c.name.toLowerCase().includes(q) || c.employer.toLowerCase().includes(q))) return false;
     return true;
   });
-  document.getElementById('cases-count').textContent = ids.length+' cases total · showing '+filtered.length;
+  document.getElementById('cases-count').textContent = ids.length+(prototypeView==='law-firm' ? ' cases assigned to Alex Morgan' : ' cases total')+' · showing '+filtered.length;
   if(filtered.length===0){
     container.innerHTML = '<tr><td colspan="6" style="color:var(--sub);text-align:center;padding:24px;">No matching cases. Try adjusting the filters.</td></tr>';
     return;
@@ -977,7 +1046,7 @@ function renderCaseList(){
     const c = casesData[id];
     return `<tr onclick="openCase('${id}')">
       <td><div class="ct-name">${c.name}</div><div class="ct-sub">${c.role}</div></td>
-      <td>${c.type}</td>
+      <td>${c.type}<div class="ct-sub">Law firm: ${partnerName(c)}</div></td>
       <td class="${tagClass(c.statusClass)}">${c.statusLabel}</td>
       <td>${c.nextStep==='—'?'Completed':c.nextStep}</td>
       <td class="${/^(Due today|In [1-3] days?)$/.test(c.nextDue)?'tag rfe':''}">${c.nextDue}</td>
@@ -990,7 +1059,14 @@ document.addEventListener('change', e=>{ if(e.target && (e.target.id==='case-fil
 
 let currentCaseId = null;
 function openCase(id){
-  if(id) currentCaseId = id;
+  const requestedId=id || currentCaseId;
+  if(!canViewCase(requestedId)){
+    currentCaseId=null;
+    document.getElementById('prototype-view-status').textContent='This case is not assigned to Alex Morgan. Showing assigned cases only.';
+    showScreen('cases');
+    return;
+  }
+  currentCaseId = requestedId;
   const c = casesData[currentCaseId];
   if(!c) return;
   document.getElementById('cd-name').textContent = c.name;
@@ -1017,6 +1093,7 @@ function openCase(id){
     <div><span>Employee</span>${c.name}</div>
     <div><span>Employer</span>${c.employer}</div>
     <div><span>Case Type</span>${c.type}</div>
+    <div><span>Law Firm Partner</span>${partnerName(c)}</div>
     <div><span>Priority Date</span>${c.priorityDate}</div>
     <div><span>Filed Date</span>${c.filedDate}</div>
     <div><span>Status</span>${c.statusLabel}</div>
@@ -1348,7 +1425,7 @@ const STATUS_KEYS = [
   {key:'audit', label:'Audit'},
   {key:'approved', label:'Approved/Certified'},
 ];
-function allCases(){ return Object.keys(casesData).map(id=>({id, ...casesData[id]})); }
+function allCases(){ return visibleCaseIds().map(id=>({id, ...casesData[id]})); }
 
 function renderReportsOverview(){
   const cases = allCases();
@@ -1670,6 +1747,7 @@ function wzFinish(){
   const stages = stageSets[wzData.type]||stageSets['Other'];
   casesData[newId] = {
     name: wzData.name||'Unnamed Employee', role: wzData.position||'—', employer: 'ABC Tech Solutions Inc.',
+    lawFirmPartnerId: null,
     type: wzData.type, caseId: wzData.type.replace('-','')+'-2026-'+String(1000+newCaseCounter),
     statusClass:'process', statusLabel:'In Process', stageIdx:0,
     priorityDate: wzData.priority||'N/A', filedDate:'Aug 8, 2026', nextStep: stages[0]+' Filing', nextDue:'To be scheduled',
@@ -1683,7 +1761,7 @@ function wzFinish(){
   renderCaseList();
   if(typeof renderDashboard==='function') renderDashboard();
 }
-function openWizard(){ wzStep=1; wzErrors={}; wzSubmitting=false; document.getElementById('wz-steps').style.display='flex'; renderStepsBar(); renderWizardBody(); document.getElementById('wizard-overlay').style.display='flex'; }
+function openWizard(){ if(prototypeView!=='hr') return; wzStep=1; wzErrors={}; wzSubmitting=false; document.getElementById('wz-steps').style.display='flex'; renderStepsBar(); renderWizardBody(); document.getElementById('wizard-overlay').style.display='flex'; }
 function closeWizard(){ document.getElementById('wizard-overlay').style.display='none'; }
 document.getElementById('wizard-overlay').addEventListener('click', e=>{ if(e.target.id==='wizard-overlay') closeWizard(); });
 
@@ -1706,7 +1784,7 @@ function renderDashboard(){
   }).slice(0,4);
 
   document.getElementById('today-sub').textContent = attn.length
-    ? weekday+', '+dateStr+' · '+attn.length+' item'+(attn.length>1?'s':'')+' need your attention today'
+    ? weekday+', '+dateStr+' · '+attn.length+' item'+(attn.length>1?'s need':' needs')+' your attention today'
     : weekday+', '+dateStr+" · You're all caught up — nothing urgent today";
 
   document.getElementById('dash-needs-attention').innerHTML = attn.length ? attn.map(c=>{
@@ -1737,14 +1815,14 @@ function renderDashboard(){
     </div>`;
   }).join('') : '<div class="row" style="color:var(--sub);">Nothing scheduled in the next few days.</div>';
 
-  const recentNoti = notificationsData.slice(0,4);
+  const recentNoti = notificationsData.filter(n=>canViewCase(n.caseId)).slice(0,4);
   document.getElementById('dash-activity').innerHTML = recentNoti.map(n=>
     `<div class="activity-row" style="cursor:pointer;" onclick="openNotiDetail('${n.id}')">
       ${n.title}${casesData[n.caseId]?' · '+casesData[n.caseId].name:''}
       <span class="activity-time">${n.timeAgo}</span>
     </div>`).join('');
 
-  const unread = notificationsData.filter(n=>n.unread).length;
+  const unread = notificationsData.filter(n=>n.unread && canViewCase(n.caseId)).length;
   const bd = document.getElementById('sidebar-bell-dot');
   if(bd) bd.style.display = unread>0 ? 'block' : 'none';
 }
