@@ -4,13 +4,13 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-function workspace() {
+function workspace(filename) {
   const errors = [];
   const virtualConsole = new VirtualConsole();
   virtualConsole.on('jsdomError', error => {
     if (!error.message.includes('window.scrollTo')) errors.push(error);
   });
-  const dom = new JSDOM(readFileSync(join(__dirname, '..', 'EZ-Follow-Prototype.html'), 'utf8'), {
+  const dom = new JSDOM(readFileSync(join(__dirname, '..', filename), 'utf8'), {
     runScripts: 'dangerously', virtualConsole,
     beforeParse(window) { window.scrollTo = () => {}; }
   });
@@ -20,8 +20,9 @@ function workspace() {
 
 const names = doc => Array.from(doc.querySelectorAll('#case-list-container .ct-name'), node => node.textContent);
 
-test('HR sees all eight cases; partner sees exactly their three assigned cases', () => {
-  const dom = workspace(), w = dom.window, d = w.document;
+for (const filename of ['EZ-Follow-Prototype.html', 'EZ-Follow-App-Final-EN.html']) {
+test(filename + ': ' + 'HR sees all eight cases; partner sees exactly their three assigned cases', () => {
+  const dom = workspace(filename), w = dom.window, d = w.document;
   try {
     assert.equal(names(d).length, 8);
     d.getElementById('prototype-view-select').value = 'law-firm';
@@ -33,8 +34,8 @@ test('HR sees all eight cases; partner sees exactly their three assigned cases',
   } finally { dom.window.close(); }
 });
 
-test('search and type/status filters cannot expand the partner scope', () => {
-  const dom = workspace(), w = dom.window, d = w.document;
+test(filename + ': ' + 'search and type/status filters cannot expand the partner scope', () => {
+  const dom = workspace(filename), w = dom.window, d = w.document;
   try {
     w.setPrototypeView('law-firm');
     const search = d.getElementById('case-search');
@@ -55,8 +56,8 @@ test('search and type/status filters cannot expand the partner scope', () => {
   } finally { dom.window.close(); }
 });
 
-test('switching from an unassigned open case leaves its details; direct opening is rejected', () => {
-  const dom = workspace(), w = dom.window, d = w.document;
+test(filename + ': ' + 'switching from an unassigned open case leaves its details; direct opening is rejected', () => {
+  const dom = workspace(filename), w = dom.window, d = w.document;
   try {
     w.openCase('c3');
     assert.equal(d.getElementById('cd-name').textContent, 'David Lee');
@@ -75,8 +76,8 @@ test('switching from an unassigned open case leaves its details; direct opening 
   } finally { dom.window.close(); }
 });
 
-test('Today and its activity are scoped; unrelated modules are outside the partner demo', () => {
-  const dom = workspace(), w = dom.window, d = w.document;
+test(filename + ': ' + 'Today and its activity are scoped; unrelated modules are outside the partner demo', () => {
+  const dom = workspace(filename), w = dom.window, d = w.document;
   try {
     w.setPrototypeView('law-firm');
     w.showScreen('dashboard');
@@ -97,5 +98,28 @@ test('Today and its activity are scoped; unrelated modules are outside the partn
     assert.equal(d.querySelector('[data-nav="tasks"]').hidden, false);
     w.showScreen('dashboard');
     assert.match(d.getElementById('dash-needs-attention').textContent, /David Lee/);
+  } finally { dom.window.close(); }
+});
+
+}
+
+test('mobile More keeps Settings reachable while hiding unrelated modules', () => {
+  const dom = workspace('EZ-Follow-App-Final-EN.html'), w = dom.window, d = w.document;
+  try {
+    w.setPrototypeView('law-firm');
+    assert.equal(d.getElementById('bnav-more').hidden, false);
+    assert.equal(d.querySelector('.app-topbar .bell-btn').hidden, true);
+    w.toggleMoreSheet(true);
+    assert.ok(d.getElementById('more-sheet-overlay').classList.contains('open'));
+    for (const name of ['documents', 'reports', 'contacts']) {
+      assert.equal(d.querySelector('.more-item[data-nav="'+name+'"]').hidden, true);
+    }
+    d.querySelector('.more-item[data-nav="settings"]').click();
+    assert.equal(d.querySelector('.screen.active').id, 'screen-settings');
+    assert.equal(d.querySelector('.settings-section.active').id, 'set-roles');
+    assert.equal(d.getElementById('more-sheet-overlay').classList.contains('open'), false);
+    w.setPrototypeView('hr');
+    assert.equal(d.querySelector('.app-topbar .bell-btn').hidden, false);
+    assert.equal(names(d).length, 8);
   } finally { dom.window.close(); }
 });

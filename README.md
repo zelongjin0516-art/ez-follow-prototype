@@ -19,7 +19,7 @@ Some modules are outside this limited partner simulation and are hidden there.
 control.** All sample records remain in the downloaded HTML. The prototype
 has not been deployed for real workplace use.
 
-The separate `EZ-Follow-App-Final-EN.html` is unchanged by this iteration.
+The [mobile prototype](https://zelongjin0516-art.github.io/ez-follow-prototype/EZ-Follow-App-Final-EN.html) also includes the HR / Alex view switch, assigned-case filters, and scoped Today content. On mobile, use **More → Settings** to reach Roles & Permissions.
 
 ## Checks
 
