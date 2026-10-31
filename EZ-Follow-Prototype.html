@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>EZ Follow · Interactive Prototype</title>
+<style>
+  :root{
+    --navy-900:#3F6256; --navy-700:#3F6256; --navy-600:#4A6F62;
+    --gold:#3F6256; --gold-dark:#33504A;
+    --bg:#F7F7F5; --card:#FFFFFF; --line:#E3E4E0;
+    --ink:#202321; --sub:#737873; --muted:#9CA39C;
+    --green:#4F7D62; --red:#B9564B; --blue:#58728A; --amber:#B7863D;
+    --brand-tint:#E8EFEB;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Inter",sans-serif;background:var(--bg);color:var(--ink);}
+  .app{display:flex;min-height:100vh;}
+  /* Sidebar */
+  .sidebar{width:216px;background:var(--card);border-right:1px solid var(--line);color:var(--ink);flex-shrink:0;padding:18px 0;display:flex;flex-direction:column;}
+  .brand{display:flex;align-items:center;gap:8px;padding:0 20px 16px;font-weight:700;font-size:15px;border-bottom:1px solid var(--line);margin-bottom:10px;}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+  .nav-group-label{padding:14px 20px 6px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .nav-group-label:first-child{padding-top:2px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13.5px;color:var(--sub);cursor:pointer;border-left:2px solid transparent;}
+  .nav-item:hover{background:var(--brand-tint);color:var(--ink);}
+  .nav-item.active{background:var(--brand-tint);color:var(--gold-dark);border-left-color:var(--gold);font-weight:600;}
+  .nav-item .ic{width:16px;height:16px;text-align:center;opacity:.8;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .nav-item .ic svg{width:16px;height:16px;}
+  .sidebar-foot-nav{margin-top:auto;border-top:1px solid var(--line);padding-top:8px;}
+  .sidebar-foot{padding:12px 20px 4px;font-size:11px;color:var(--muted);}
+  /* Main */
+  .main{flex:1;padding:26px 34px;max-width:1180px;}
+  [hidden]{display:none!important;}
+  .prototype-view{padding:14px 16px;margin-bottom:18px;border:1px solid var(--line);border-radius:8px;background:var(--card);}
+  .prototype-view-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .prototype-view label{font-size:13px;font-weight:600;}
+  .prototype-view select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;max-width:100%;background:var(--card);color:var(--ink);}
+  .prototype-view small{display:block;margin-top:8px;color:var(--sub);font-size:11.5px;line-height:1.5;}
+  #prototype-view-status{font-size:12px;color:var(--gold-dark);margin-top:8px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .bell-btn-desktop{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);position:relative;flex-shrink:0;}
+  .bell-btn-desktop:hover{background:var(--brand-tint);color:var(--ink);}
+  .bell-btn-desktop svg{width:16px;height:16px;}
+  .bell-btn-desktop .bell-dot{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--card);}
+  .topbar h1{font-size:21px;margin:0;font-weight:600;color:var(--ink);}
+  .topbar p{margin:2px 0 0;font-size:12.5px;color:var(--sub);}
+  .btn{background:var(--gold);color:#fff;border:none;padding:8px 15px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn:hover{background:var(--gold-dark);}
+  .btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--muted);}
+  .btn.text{background:none;border:none;color:var(--gold-dark);font-weight:600;font-size:12.5px;cursor:pointer;padding:0;}
+  .btn.text:hover{text-decoration:underline;}
+  .btn.gold{background:var(--gold);color:#fff;}
+  /* Grid & cards */
+  .grid4{display:flex;gap:14px;margin-bottom:16px;} .grid4 .card{flex:1;min-width:0;}
+  .grid2{display:flex;gap:14px;margin-bottom:16px;} .grid2 .card{flex:1;min-width:0;} .grid2 .card:first-child{flex:1.3;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;}
+  .stat .num{font-size:24px;font-weight:700;color:var(--ink);}
+  .stat .lbl{font-size:11.5px;color:var(--sub);margin-top:4px;letter-spacing:.02em;}
+  .stat .delta{font-size:11px;color:var(--green);margin-top:6px;}
+  .card h3{font-size:13.5px;margin:0 0 12px;color:var(--ink);font-weight:600;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F0EE;font-size:13px;}
+  .row:last-child{border-bottom:none;}
+  .tag{font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600;}
+  .tag.process{background:transparent;color:var(--blue);padding-left:0;}
+  .tag.approved{background:transparent;color:var(--green);padding-left:0;}
+  .tag.rfe{background:transparent;color:var(--red);padding-left:0;}
+  .tag.audit{background:transparent;color:var(--amber);padding-left:0;}
+  .case-list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid #F0F0EE;cursor:pointer;}
+  .case-list-item:hover{background:var(--brand-tint);}
+  .case-list-item .name{font-weight:600;font-size:13.5px;}
+  .case-list-item .role{font-size:11.5px;color:var(--sub);}
+  .case-list-item .next{font-size:11.5px;color:var(--sub);text-align:right;}
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  svg.donut{flex-shrink:0;}
+  .legend div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);margin-bottom:6px;}
+  .legend .sw{width:9px;height:9px;border-radius:2px;}
+  /* screens */
+  .screen{display:none;}
+  .screen.active{display:block;}
+  /* Case detail */
+  .back-link{font-size:12.5px;color:var(--sub);cursor:pointer;margin-bottom:10px;display:inline-block;}
+  .back-link:hover{color:var(--ink);}
+  .cd-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .cd-head h2{margin:0 0 4px;font-size:19px;font-weight:700;}
+  .cd-head .sub{font-size:12.5px;color:var(--sub);}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .tab{padding:9px 14px;font-size:13px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;}
+  .tab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+  .tabpanel{display:none;}
+  .tabpanel.active{display:block;}
+  .subtab{padding:9px 14px;font-size:13px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;}
+  .subtab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+  .subtabpanel{display:none;}
+  .subtabpanel.active{display:block;}
+  .tab-static{padding:9px 14px;font-size:13px;color:var(--sub);border-bottom:2px solid transparent;}
+  .tab-static.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+  /* Contacts */
+  .contact-search{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-size:13px;margin-bottom:14px;font-family:inherit;}
+  .contact-card{display:flex;align-items:flex-start;gap:12px;padding:14px 4px;border-bottom:1px solid #F0F0EE;}
+  .contact-card:last-child{border-bottom:none;}
+  .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+  .avatar.emp{background:var(--brand-tint);color:var(--gold-dark);}
+  .avatar.law{background:#F1EDE3;color:#8A6C2E;}
+  .avatar.vendor{background:#EDEDEA;color:var(--sub);}
+  .contact-main{flex:1;min-width:0;}
+  .contact-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .contact-name{font-weight:600;font-size:13.5px;}
+  .role-badge{font-size:10px;padding:1px 0;border-radius:0;font-weight:600;background:transparent !important;}
+  .role-badge.emp{color:var(--gold-dark);}
+  .role-badge.law{color:#8A6C2E;}
+  .role-badge.vendor{color:var(--sub);}
+  .contact-sub{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .contact-meta{display:flex;gap:16px;margin-top:6px;font-size:12px;color:var(--ink);flex-wrap:wrap;}
+  .contact-meta span{color:var(--sub);}
+  .contact-case{font-size:11px;color:var(--gold-dark);margin-top:4px;}
+  /* Settings */
+  .settings-layout{display:flex;gap:20px;align-items:flex-start;}
+  .settings-nav{width:180px;flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;}
+  .settings-nav-item{padding:9px 12px;font-size:13px;color:var(--sub);border-radius:6px;cursor:pointer;margin-bottom:2px;}
+  .settings-nav-item:hover{background:var(--brand-tint);color:var(--ink);}
+  .settings-nav-item.active{background:var(--gold);color:#fff;font-weight:600;}
+  .settings-content{flex:1;min-width:0;}
+  .settings-section{display:none;}
+  .settings-section.active{display:block;}
+  .settings-block{margin-bottom:18px;}
+  .settings-block h4{font-size:12.5px;color:var(--sub);margin:0 0 10px;text-transform:uppercase;letter-spacing:.03em;}
+  .profile-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .profile-head .avatar{width:52px;height:52px;font-size:17px;}
+  .profile-head .pname{font-size:16px;font-weight:700;}
+  .profile-head .prole{font-size:12.5px;color:var(--sub);margin-top:2px;}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F0F0EE;font-size:13px;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .sr-label{font-weight:600;}
+  .settings-row .sr-desc{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .switch{position:relative;width:36px;height:20px;border-radius:20px;background:#DDDFDA;flex-shrink:0;cursor:pointer;transition:background .15s;}
+  .switch.on{background:var(--gold);}
+  .switch .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;}
+  .switch.on .knob{left:18px;}
+  .member-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F0F0EE;}
+  .member-row:last-child{border-bottom:none;}
+  .member-row .avatar{width:30px;height:30px;font-size:11px;}
+  .member-info{flex:1;min-width:0;}
+  .member-info .mname{font-weight:600;font-size:13px;}
+  .member-info .memail{font-size:11.5px;color:var(--sub);}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;}
+  /* Tasks */
+  .task-row{display:flex;align-items:flex-start;gap:10px;padding:11px 4px;border-bottom:1px solid #F0F0EE;}
+  .task-row:last-child{border-bottom:none;}
+  .task-row input[type=checkbox]{margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--gold);}
+  .task-row.done .task-title{text-decoration:line-through;color:var(--sub);}
+  .task-main{flex:1;min-width:0;}
+  .task-title{font-weight:600;font-size:13.5px;}
+  .task-meta{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .task-meta a{color:var(--gold-dark);cursor:pointer;text-decoration:none;font-weight:600;}
+  .task-meta a:hover{text-decoration:underline;}
+  .task-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+  .prio{font-size:10.5px;padding:0;border-radius:0;font-weight:600;background:transparent !important;}
+  .prio-high{color:var(--red);}
+  .prio-medium{color:var(--amber);}
+  .prio-low{color:var(--sub);}
+
+  /* Today / Dashboard sections — no outer card, pure list + divider */
+  .today-section{margin-bottom:22px;}
+  .today-section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;}
+  .today-section-head h3{font-size:12px;margin:0;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;}
+  .today-section-sub{font-size:11.5px;color:var(--muted);}
+  .today-cols{display:flex;gap:32px;}
+  .today-cols .today-section{flex:1;min-width:0;}
+  .today-cols .today-section:first-child{margin-right:32px;}
+  .attn-row{display:flex;align-items:flex-start;gap:10px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .attn-row:last-child{border-bottom:none;}
+  .attn-row:hover .attn-name{color:var(--gold-dark);}
+  .attn-dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+  .attn-dot.urgent{background:var(--red);}
+  .attn-dot.normal{background:var(--amber);}
+  .attn-main{flex:1;min-width:0;}
+  .attn-top{display:flex;justify-content:space-between;gap:10px;}
+  .attn-name{font-weight:600;font-size:13.5px;}
+  .attn-due{font-size:11.5px;font-weight:600;color:var(--red);white-space:nowrap;}
+  .attn-due.normal{color:var(--sub);font-weight:500;}
+  .attn-meta{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .attn-action{font-size:11.5px;color:var(--gold-dark);margin-top:4px;font-weight:600;}
+  .upcoming-row{display:flex;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .upcoming-row:last-child{border-bottom:none;}
+  .upcoming-date{color:var(--sub);width:56px;flex-shrink:0;}
+  .upcoming-name{font-weight:600;}
+  .upcoming-type{color:var(--sub);}
+  .activity-row{padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .activity-row:last-child{border-bottom:none;}
+  .activity-time{color:var(--muted);font-size:11px;display:block;margin-top:2px;}
+
+  /* Cases table */
+  .case-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .case-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .case-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line);background:#FAFAF8;}
+  .case-table td{padding:11px 14px;border-bottom:1px solid #F0F0EE;vertical-align:middle;}
+  .case-table tr:last-child td{border-bottom:none;}
+  .case-table tbody tr{cursor:pointer;}
+  .case-table tbody tr:hover{background:var(--brand-tint);}
+  .case-table .ct-name{font-weight:600;color:var(--ink);}
+  .case-table .ct-sub{font-size:11px;color:var(--sub);}
+  .case-table .ct-owner{width:26px;height:26px;border-radius:50%;background:var(--brand-tint);color:var(--gold-dark);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+  /* Next Action block */
+  .next-action{border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:16px 18px;margin-bottom:16px;background:var(--card);}
+  .next-action-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold-dark);font-weight:700;margin-bottom:6px;}
+  .next-action-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+  .next-action-meta{font-size:12.5px;color:var(--sub);margin-bottom:12px;}
+  .next-action-btns{display:flex;gap:10px;}
+  .stepper-inline{display:flex;align-items:center;gap:0;margin-bottom:18px;font-size:12px;color:var(--sub);flex-wrap:wrap;}
+  .stepper-inline .si-step{display:flex;align-items:center;gap:6px;}
+  .stepper-inline .si-dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex-shrink:0;}
+  .stepper-inline .si-step.done .si-dot{background:var(--green);}
+  .stepper-inline .si-step.now .si-dot{background:var(--gold);}
+  .stepper-inline .si-step.now{color:var(--ink);font-weight:600;}
+  .stepper-inline .si-line{width:24px;height:1px;background:var(--line);margin:0 8px;}
+
+
+  /* Mobile bottom nav (hidden by default, shown under media query) */
+  .bottom-nav{display:none;}
+  #more-sheet-overlay{display:none;}
+
+  @media (max-width: 860px){
+    .main{padding:16px;max-width:100%;}
+    .topbar{flex-wrap:wrap;gap:10px;}
+    .topbar h1{font-size:17px;}
+    .grid4{flex-wrap:wrap;}
+    .grid4 .card{flex:1 1 46%;min-width:130px;}
+    .grid2{flex-direction:column;}
+    .grid2 .card:first-child{flex:1;}
+    .settings-layout{flex-direction:column;}
+    .settings-nav{width:100%;display:flex;overflow-x:auto;gap:4px;padding:6px;}
+    .settings-nav-item{flex:0 0 auto;white-space:nowrap;}
+    .info-grid div{flex:1 1 100%;}
+    .crosstab-table{display:block;overflow-x:auto;white-space:nowrap;}
+    .wizard-box{max-width:92vw;padding:22px 18px;margin:0 16px;}
+    #case-search,#task-search{flex:1 1 100% !important;min-width:0 !important;}
+    #case-filter-type,#case-filter-status,#task-filter-priority{flex:1 1 auto !important;min-width:0 !important;}
+    .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+    .tabs .tab,.tabs .rtab{flex-shrink:0;white-space:nowrap;}
+    .case-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .case-table{min-width:640px;}
+  }
+  /* Calendar */
+  .cal-cell{flex:0 0 14.28%;text-align:center;padding:4px 0;font-size:12px;cursor:pointer;}
+  .cal-cell .d{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;position:relative;}
+  .cal-cell:hover .d{background:#F0F2F5;}
+  .cal-cell.today .d{background:var(--navy-900);color:#fff;font-weight:700;}
+  .cal-cell.selected .d{background:var(--gold);color:#fff;font-weight:700;}
+  .cal-cell .dot{width:4px;height:4px;border-radius:50%;background:var(--red);position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);}
+  .cal-cell.empty{cursor:default;}
+  /* Notifications */
+  .noti-row{display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid #F0F2F5;cursor:pointer;}
+  .noti-row:last-child{border-bottom:none;}
+  .noti-row:hover{background:#FAFBFD;}
+  .noti-row .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px;}
+  .noti-row.read .unread-dot{background:transparent;}
+  .noti-main{flex:1;min-width:0;}
+  .noti-title{font-weight:600;font-size:13.5px;}
+  .noti-row.read .noti-title{font-weight:400;color:var(--ink);}
+  .noti-sub{font-size:11.5px;color:var(--sub);margin-top:2px;}
+  .noti-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+  .star{color:var(--gold);font-size:12px;}
+  /* Reports */
+  .rtab{padding:9px 14px;font-size:13px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;}
+  .rtab.active{color:var(--navy-900);font-weight:600;border-bottom-color:var(--gold);}
+  .report-panel{display:none;}
+  .report-panel.active{display:block;}
+  .crosstab-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .crosstab-table th,.crosstab-table td{padding:8px 6px;text-align:center;border-bottom:1px solid #F0F2F5;}
+  .crosstab-table th{color:var(--sub);font-weight:600;font-size:11px;text-transform:uppercase;}
+  .crosstab-table td:first-child,.crosstab-table th:first-child{text-align:left;font-weight:600;color:var(--ink);}
+  .avg-bar-row{margin-bottom:12px;}
+  .avg-bar-label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;}
+  .avg-bar-track{height:8px;background:#EEF0F3;border-radius:6px;overflow:hidden;}
+  .avg-bar-fill{height:100%;background:var(--gold);border-radius:6px;}
+  .info-grid{display:flex;flex-wrap:wrap;gap:10px 24px;font-size:13px;} .info-grid div{flex:1 1 40%;}
+  .info-grid div span{display:block;color:var(--sub);font-size:11px;margin-bottom:2px;}
+  .stepper{display:flex;align-items:center;margin:6px 0 4px;}
+  .step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+  .step .circ{width:26px;height:26px;border-radius:50%;background:#E9ECF1;color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;z-index:1;}
+  .step.done .circ{background:var(--navy-900);color:#fff;}
+  .step.now .circ{background:var(--gold);color:#fff;}
+  .step .lbl2{font-size:10.5px;color:var(--sub);margin-top:6px;text-align:center;}
+  .step:not(:last-child)::after{content:"";position:absolute;top:13px;left:50%;width:100%;height:2px;background:#E9ECF1;z-index:0;}
+  .step.done:not(:last-child)::after{background:var(--navy-900);}
+  /* wizard */
+  .wizard-box{max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:28px 34px;}
+  .wz-steps{display:flex;justify-content:space-between;margin-bottom:26px;}
+  .wz-field{margin-bottom:14px;}
+  .wz-field label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:5px;}
+  .wz-field input,.wz-field select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;font-family:inherit;}
+  .wz-field.has-error label{color:var(--red);}
+  .wz-field.has-error input{border-color:var(--red);background:#FCF3F1;}
+  .wz-field.has-error input:focus{outline:none;box-shadow:0 0 0 3px rgba(185,86,75,0.12);}
+  .wz-error-msg{display:flex;align-items:center;gap:5px;color:var(--red);font-size:12px;margin-top:5px;font-weight:500;}
+  .wz-error-msg::before{content:"!";width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .type-opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}
+  .type-opt.sel{border-color:var(--gold);background:#FBF6E9;}
+  .type-opt .r{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex-shrink:0;}
+  .type-opt.sel .r{border-color:var(--gold);background:var(--gold);}
+  .type-opt .t{font-weight:600;font-size:13.5px;}
+  .type-opt .d{font-size:11.5px;color:var(--sub);}
+  .wz-foot{display:flex;justify-content:space-between;margin-top:22px;}
+  .review-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0F2F5;font-size:13px;}
+  .success-box{text-align:center;padding:30px 10px;}
+  .success-box .ck{width:56px;height:56px;border-radius:50%;background:#EAF7EF;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;}
+  .loading-box{text-align:center;padding:52px 10px;}
+  .loading-box h3{margin:0 0 8px;font-size:15px;}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);margin:0 auto 20px;animation:wz-spin 0.8s linear infinite;}
+  @keyframes wz-spin{ to{ transform:rotate(360deg); } }
+
+  /* ===== Auth: Login ===== */
+  #auth-login{
+    position:fixed; top:0; left:0; right:0; bottom:0; z-index:200;
+    background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:36px 32px;}
+  .login-brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px; margin-bottom:6px;}
+  .login-brand .dot{width:9px; height:9px; border-radius:50%; background:var(--gold);}
+  .login-tag{font-size:13px; color:var(--sub); margin-bottom:28px;}
+  .login-field{margin-bottom:16px;}
+  .login-field label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:5px;}
+  .login-field input{width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:6px; font-size:13.5px; font-family:inherit;}
+  .login-field.has-error input{border-color:var(--red); background:#FCF3F1;}
+  .login-row{display:flex; justify-content:space-between; align-items:center; margin:4px 0 22px;}
+  .login-remember{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--sub);}
+  .login-forgot{font-size:12.5px; color:var(--gold-dark); text-decoration:none; cursor:pointer;}
+  .login-forgot:hover{text-decoration:underline;}
+  .login-submit{width:100%; padding:11px; font-size:13.5px;}
+  .login-foot{margin-top:22px; text-align:center; font-size:12px; color:var(--muted);}
+
+  /* ===== Auth: Splash / loading transition ===== */
+  #auth-splash{
+    position:fixed; top:0; left:0; right:0; bottom:0; z-index:210; display:none;
+    background:var(--ink); align-items:center; justify-content:center; flex-direction:column;
+  }
+  .splash-rings{position:relative; width:88px; height:88px; margin-bottom:26px; display:flex; align-items:center; justify-content:center;}
+  .splash-ring{position:absolute; top:0; left:0; width:100%; height:100%; border:2px solid rgba(232,239,235,0.45); border-radius:50%; animation:ring-pulse 2.1s ease-out infinite;}
+  .splash-ring.r2{animation-delay:0.7s;}
+  .splash-ring.r3{animation-delay:1.4s;}
+  .splash-dot{width:14px; height:14px; border-radius:50%; background:var(--brand-tint); position:relative; z-index:2;}
+  @keyframes ring-pulse{ 0%{transform:scale(0.25); opacity:1;} 100%{transform:scale(1.7); opacity:0;} }
+  .splash-word{color:#fff; font-size:19px; font-weight:700; letter-spacing:.01em; margin-bottom:8px;}
+  .splash-status{color:#9CA39C; font-size:12.5px;}
+</style>
+</head>
+<body>
+
+<!-- Auth: Login -->
+<div id="auth-login">
+  <div class="login-card">
+    <div class="login-brand"><span class="dot"></span>EZ Follow</div>
+    <div class="login-tag">Sign in to your HR workspace.</div>
+    <form id="login-form">
+      <div class="login-field" id="login-field-email">
+        <label>Email</label>
+        <input id="login-email" type="email" value="emily.chen@abc.com">
+        <div class="wz-error-msg" id="login-email-err" style="display:none;">Enter your email to continue.</div>
+      </div>
+      <div class="login-field" id="login-field-password">
+        <label>Password</label>
+        <input id="login-password" type="password" value="••••••••••">
+        <div class="wz-error-msg" id="login-password-err" style="display:none;">Enter your password to continue.</div>
+      </div>
+      <div class="login-row">
+        <label class="login-remember"><input type="checkbox" checked style="accent-color:var(--gold);"> Remember me</label>
+        <a class="login-forgot">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn gold login-submit">Sign In</button>
+    </form>
+    <div class="login-foot">EZ Follow · Immigration Case Management</div>
+  </div>
+</div>
+
+<!-- Auth: Splash / loading transition -->
+<div id="auth-splash">
+  <div class="splash-rings">
+    <div class="splash-ring r1"></div>
+    <div class="splash-ring r2"></div>
+    <div class="splash-ring r3"></div>
+    <div class="splash-dot"></div>
+  </div>
+  <div class="splash-word">EZ Follow</div>
+  <div class="splash-status" id="splash-status">Loading your workspace&hellip;</div>
+</div>
+
+<div class="app" style="display:none;">
+  <div class="sidebar">
+    <div class="brand"><span class="dot"></span>EZ Follow</div>
+    <div class="nav-item active" data-nav="dashboard"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Today</div>
+    <div class="nav-item" data-nav="cases"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span>Cases</div>
+    <div class="nav-item" data-nav="tasks"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M7.5 12l3 3 6-6"/></svg></span>Tasks</div>
+    <div class="nav-item" data-nav="calendar"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg></span>Calendar</div>
+    <div class="nav-group-label">Records</div>
+    <div class="nav-item" data-nav="documents"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2.5h7l5 5v13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M13 2.5v5h5"/><line x1="8.5" y1="13" x2="15.5" y2="13"/><line x1="8.5" y1="16.5" x2="15.5" y2="16.5"/></svg></span>Documents</div>
+    <div class="nav-item" data-nav="reports"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="19" y1="20" x2="19" y2="14"/></svg></span>Reports</div>
+    <div class="nav-group-label">Organization</div>
+    <div class="nav-item" data-nav="contacts"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="8.5" r="2.3"/><path d="M15.8 14.2a4.8 4.8 0 0 1 4.9 5.6"/></svg></span>People</div>
+    <div class="sidebar-foot-nav">
+      <div class="nav-item" data-nav="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1h-.2a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.6v-.2a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg></span>Settings</div>
+      <div class="sidebar-foot" id="workspace-profile">Emily Chen<br>HR Manager</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <section class="prototype-view" aria-label="Prototype view simulation">
+      <div class="prototype-view-controls">
+        <label for="prototype-view-select">View as</label>
+        <select id="prototype-view-select" onchange="setPrototypeView(this.value)">
+          <option value="hr">HR · Emily Chen</option>
+          <option value="law-firm">Law Firm Partner · Alex Morgan</option>
+        </select>
+      </div>
+      <small>Prototype view simulation with fictional data. This filters the interface only; all sample records remain in this file. No backend access control.</small>
+      <div id="prototype-view-status" role="status" aria-live="polite">HR view · All cases</div>
+    </section>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+      <div class="bell-btn-desktop" onclick="showScreen('notifications')" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 1.8 6.2 1.8 6.2H4.2S6 14 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+        <span class="bell-dot" id="sidebar-bell-dot" style="display:none;"></span>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="topbar">
+        <div>
+          <h1>Good afternoon, Emily</h1>
+          <p id="today-sub">Here's what needs your attention today</p>
+        </div>
+        <button class="btn gold" onclick="openWizard()">+ New Case</button>
+      </div>
+
+      <div class="today-section">
+        <div class="today-section-head"><h3>Needs Attention</h3></div>
+        <div id="dash-needs-attention"></div>
+      </div>
+
+      <div class="today-cols">
+        <div class="today-section">
+          <div class="today-section-head"><h3>Upcoming</h3><span class="today-section-sub">Next 7 days</span></div>
+          <div id="dash-upcoming"></div>
+        </div>
+        <div class="today-section">
+          <div class="today-section-head"><h3>Recent Activity</h3></div>
+          <div id="dash-activity"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cases list -->
+    <div class="screen" id="screen-cases">
+      <div class="topbar">
+        <div><h1>Cases</h1><p id="cases-count">8 cases total · Filter or search by type/status</p></div>
+        <button class="btn gold" onclick="openWizard()">+ New Case</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <input id="case-search" placeholder="Search by name or employer" style="flex:2;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;background:var(--card);">
+          <select id="case-filter-type" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;background:var(--card);">
+            <option value="all">All Types</option>
+            <option value="H-1B">H-1B</option>
+            <option value="I-140">I-140</option>
+            <option value="PERM">PERM</option>
+            <option value="Other">Other</option>
+          </select>
+          <select id="case-filter-status" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;background:var(--card);">
+            <option value="all">All Statuses</option>
+            <option value="process">In Process</option>
+            <option value="rfe">RFE</option>
+            <option value="audit">Audit</option>
+            <option value="approved">Approved</option>
+          </select>
+      </div>
+      <div class="case-table-wrap">
+        <table class="case-table">
+          <thead><tr><th>Employee</th><th>Case</th><th>Stage</th><th>Next Action</th><th>Due</th><th>Owner</th></tr></thead>
+          <tbody id="case-list-container"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Case detail -->
+    <div class="screen" id="screen-case-detail">
+      <span class="back-link" onclick="showScreen('cases')">&larr; Back to Cases</span>
+      <div class="cd-head">
+        <div>
+          <h2 id="cd-name">—</h2>
+          <div class="sub" id="cd-sub">—</div>
+        </div>
+        <span class="tag" id="cd-status-tag">—</span>
+      </div>
+
+      <div class="next-action" id="cd-next-action">
+        <div class="next-action-label">Next Action</div>
+        <div class="next-action-title" id="cd-na-title">—</div>
+        <div class="next-action-meta" id="cd-na-meta">—</div>
+        <div class="next-action-btns">
+          <button class="btn gold" style="padding:7px 14px;">Upload Documents</button>
+          <button class="btn ghost" style="padding:7px 14px;">Mark Complete</button>
+        </div>
+      </div>
+
+      <div class="stepper-inline" id="cd-stepper"></div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="timeline">Timeline</div>
+        <div class="tab" data-tab="tasks">Tasks</div>
+        <div class="tab" data-tab="documents">Documents</div>
+        <div class="tab" data-tab="notes">Notes</div>
+      </div>
+
+      <div class="tabpanel active" id="tab-overview">
+        <div class="card">
+          <h3>Case Information</h3>
+          <div class="info-grid" id="cd-info-grid"></div>
+        </div>
+      </div>
+      <div class="tabpanel" id="tab-timeline">
+        <div class="card" id="cd-timeline"></div>
+      </div>
+      <div class="tabpanel" id="tab-tasks">
+        <div class="card" id="cd-tasks"></div>
+      </div>
+      <div class="tabpanel" id="tab-documents">
+        <div class="card" id="cd-documents"></div>
+      </div>
+      <div class="tabpanel" id="tab-notes">
+        <div class="card" id="cd-notes"></div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="screen" id="screen-tasks">
+      <div class="topbar">
+        <div><h1>My Tasks</h1><p id="tasks-count">—</p></div>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <input id="task-search" placeholder="Search by task or assignee" style="flex:2;min-width:180px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;">
+          <select id="task-filter-priority" style="flex:1;min-width:130px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;">
+            <option value="all">All Priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="subtab active" data-subtab="tasks" data-view="pending">Pending (<span id="cnt-pending">0</span>)</div>
+        <div class="subtab" data-subtab="tasks" data-view="completed">Completed (<span id="cnt-completed">0</span>)</div>
+        <div class="subtab" data-subtab="tasks" data-view="all">All (<span id="cnt-all">0</span>)</div>
+      </div>
+      <div class="card" id="task-list-container"></div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="screen" id="screen-calendar">
+      <div class="topbar">
+        <div><h1>Calendar</h1><p>Key case milestones and task due dates · Today is Aug 8, 2026</p></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <button class="btn ghost" style="padding:5px 10px;font-size:12px;" onclick="calNav(-1)">&larr;</button>
+            <h3 id="cal-title" style="margin:0;">—</h3>
+            <button class="btn ghost" style="padding:5px 10px;font-size:12px;" onclick="calNav(1)">&rarr;</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;text-align:center;font-size:11px;color:var(--sub);margin-bottom:6px;">
+            <div style="flex:0 0 14.28%;">Sun</div><div style="flex:0 0 14.28%;">Mon</div><div style="flex:0 0 14.28%;">Tue</div><div style="flex:0 0 14.28%;">Wed</div><div style="flex:0 0 14.28%;">Thu</div><div style="flex:0 0 14.28%;">Fri</div><div style="flex:0 0 14.28%;">Sat</div>
+          </div>
+          <div id="cal-grid" style="display:flex;flex-wrap:wrap;"></div>
+        </div>
+        <div class="card">
+          <h3 id="cal-day-title">—</h3>
+          <div id="cal-day-events"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="screen" id="screen-notifications">
+      <div class="topbar">
+        <div><h1>Notifications</h1><p id="noti-count">—</p></div>
+        <button class="btn ghost" onclick="markAllRead()">Mark all as read</button>
+      </div>
+      <div class="tabs">
+        <div class="subtab active" data-subtab="noti" data-view="all">All</div>
+        <div class="subtab" data-subtab="noti" data-view="unread">Unread</div>
+        <div class="subtab" data-subtab="noti" data-view="important">Important</div>
+      </div>
+      <div class="card" id="noti-list-container"></div>
+    </div>
+
+    <!-- Notification detail -->
+    <div class="screen" id="screen-notification-detail">
+      <span class="back-link" onclick="showScreen('notifications')">&larr; Back to Notifications</span>
+      <div class="cd-head">
+        <div>
+          <h2 id="nd-title" style="font-size:18px;">—</h2>
+          <div class="sub" id="nd-time">—</div>
+        </div>
+        <span class="tag" id="nd-type-tag">—</span>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="row" style="border-bottom:none;padding-bottom:0;" id="nd-body">—</div>
+      </div>
+      <div class="card" id="nd-case-card" style="margin-bottom:16px;">
+        <h3>Related Case</h3>
+        <div class="settings-row" style="border-bottom:none;">
+          <div><div class="sr-label" id="nd-case-name">—</div><div class="sr-desc" id="nd-case-sub">—</div></div>
+          <button class="btn gold" style="padding:7px 14px;font-size:12px;" onclick="openCaseFromNoti()">View Case</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" id="nd-toggle-read-btn" onclick="toggleNotiRead()">Mark as unread</button>
+        <button class="btn ghost" id="nd-toggle-important-btn" onclick="toggleNotiImportant()">Mark as important</button>
+      </div>
+    </div>
+
+    <!-- Reports -->
+    <div class="screen" id="screen-reports">
+      <div class="topbar">
+        <div><h1>Reports</h1><p id="rep-subtitle">Compliance audit and case analytics</p></div>
+        <button class="btn ghost">Export PDF / Excel</button>
+      </div>
+      <div class="tabs">
+        <div class="rtab active" data-rview="overview">Overview</div>
+        <div class="rtab" data-rview="cases">Cases</div>
+        <div class="rtab" data-rview="compliance">Compliance</div>
+        <div class="rtab" data-rview="analytics">Analytics</div>
+      </div>
+
+      <div class="report-panel active" id="rep-overview">
+        <div class="grid4" id="rep-stat-cards"></div>
+        <div class="grid2">
+          <div class="card">
+            <h3>Case Status Distribution</h3>
+            <div class="donut-wrap" id="rep-donut-wrap"></div>
+          </div>
+          <div class="card">
+            <h3>Average Days Open (In-Progress Cases, by Type)</h3>
+            <div id="rep-avg-days"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-panel" id="rep-cases">
+        <div class="card" style="margin-bottom:14px;">
+          <h3>Type &times; Status Breakdown</h3>
+          <div id="rep-crosstab"></div>
+        </div>
+        <div class="card">
+          <h3>Cases Needing Attention (RFE / Audit)</h3>
+          <div id="rep-attention-list"></div>
+        </div>
+      </div>
+
+      <div class="report-panel" id="rep-compliance">
+        <div class="grid4" id="rep-compliance-cards"></div>
+        <div class="card">
+          <h3>Compliance &amp; Security Policies</h3>
+          <div class="settings-row"><div><div class="sr-label">Audit Log Retention</div><div class="sr-desc">Meets compliance audit requirements</div></div><span style="color:var(--sub);">2 years</span></div>
+          <div class="settings-row"><div><div class="sr-label">Sensitive Field Masking</div><div class="sr-desc">SSN and similar fields fully visible to admins only</div></div><span class="tag approved">Enabled</span></div>
+          <div class="settings-row"><div><div class="sr-label">RFE Urgent Alerts</div><div class="sr-desc">Multi-channel reminders 7/3/1 days before the response deadline</div></div><span class="tag approved">Enabled</span></div>
+          <div class="settings-row"><div><div class="sr-label">Cross-Role Status Sync</div><div class="sr-desc">Real-time sync between HR / Law Firm Partner / Employee (read-only)</div></div><span style="color:var(--sub);">&lt; 1 hour</span></div>
+        </div>
+      </div>
+
+      <div class="report-panel" id="rep-analytics">
+        <div class="card" style="margin-bottom:14px;">
+          <h3>Case Trends (Filed / Approved / Closed, by Month)</h3>
+          <div id="rep-trend-chart"></div>
+        </div>
+        <div class="card">
+          <h3>Average Processing Time (Days, Historical Average)</h3>
+          <div class="row">H-1B<span>45 days</span></div>
+          <div class="row">I-140<span>120 days</span></div>
+          <div class="row">PERM<span>180 days</span></div>
+          <div class="row">Other (O-1, etc.)<span>60 days</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="screen" id="screen-documents">
+      <div class="topbar">
+        <div><h1>Documents</h1><p>Organized by case type</p></div>
+      </div>
+      <div class="card">
+        <div class="row">H-1B Cases<span style="color:var(--sub);">12 items</span></div>
+        <div class="row">I-140 Cases<span style="color:var(--sub);">8 items</span></div>
+        <div class="row">PERM Cases<span style="color:var(--sub);">6 items</span></div>
+        <div class="row">Templates<span style="color:var(--sub);">15 items</span></div>
+        <div class="row">Policies<span style="color:var(--sub);">10 items</span></div>
+      </div>
+    </div>
+
+    <!-- Contacts -->
+    <div class="screen" id="screen-contacts">
+      <div class="topbar">
+        <div><h1>People</h1><p>8 contacts · Employees · Lawyers · Vendors/Government</p></div>
+      </div>
+      <input class="contact-search" placeholder="Search by name, email, or company">
+      <div class="tabs">
+        <div class="subtab active" data-subtab="contact" data-cat="all">All (8)</div>
+        <div class="subtab" data-subtab="contact" data-cat="emp">Employees (4)</div>
+        <div class="subtab" data-subtab="contact" data-cat="law">Lawyers (2)</div>
+        <div class="subtab" data-subtab="contact" data-cat="vendor">Vendors (2)</div>
+      </div>
+      <div class="card">
+        <div class="contact-card" data-cat="emp">
+          <div class="avatar emp">MZ</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">Michael Zhang</span><span class="role-badge emp">Employee</span></div>
+            <div class="contact-sub">Software Engineer · ABC Tech Solutions Inc.</div>
+            <div class="contact-meta"><span>&#9993; michael.zhang@abc.com</span><span>&#9742; (415) 555-0101</span></div>
+            <div class="contact-case">Related case: H1B-2026-0012 · In Process</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="emp">
+          <div class="avatar emp">SJ</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">Sarah Johnson</span><span class="role-badge emp">Employee</span></div>
+            <div class="contact-sub">Product Manager · ABC Tech Solutions Inc.</div>
+            <div class="contact-meta"><span>&#9993; sarah.johnson@abc.com</span><span>&#9742; (415) 555-0102</span></div>
+            <div class="contact-case">Related case: I140-2026-0031 · RFE</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="emp">
+          <div class="avatar emp">DL</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">David Lee</span><span class="role-badge emp">Employee</span></div>
+            <div class="contact-sub">Data Analyst · ABC Tech Solutions Inc.</div>
+            <div class="contact-meta"><span>&#9993; david.lee@abc.com</span><span>&#9742; (415) 555-0103</span></div>
+            <div class="contact-case">Related case: PERM-2026-0018 · Audit</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="emp">
+          <div class="avatar emp">JW</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">James Wilson</span><span class="role-badge emp">Employee</span></div>
+            <div class="contact-sub">Project Manager · ABC Tech Solutions Inc.</div>
+            <div class="contact-meta"><span>&#9993; james.wilson@abc.com</span><span>&#9742; (415) 555-0105</span></div>
+            <div class="contact-case">Related case: I140-2026-0009 · Approved</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="law">
+          <div class="avatar law">JS</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">John Smith</span><span class="role-badge law">Attorney</span></div>
+            <div class="contact-sub">Partner Attorney · Smith &amp; Associates LLP</div>
+            <div class="contact-meta"><span>&#9993; john.smith@lawfirm.com</span><span>&#9742; (212) 555-0201</span></div>
+            <div class="contact-case">Handles 6 cases: H-1B / PERM</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="law">
+          <div class="avatar law">RK</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">Rachel Kim</span><span class="role-badge law">Attorney</span></div>
+            <div class="contact-sub">Associate Attorney · Smith &amp; Associates LLP</div>
+            <div class="contact-meta"><span>&#9993; rachel.kim@lawfirm.com</span><span>&#9742; (212) 555-0202</span></div>
+            <div class="contact-case">Handles 3 I-140 cases</div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="vendor">
+          <div class="avatar vendor">US</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">USCIS</span><span class="role-badge vendor">Government</span></div>
+            <div class="contact-sub">U.S. Citizenship and Immigration Services · Case status inquiries</div>
+            <div class="contact-meta"><span>&#127760; uscis.gov</span></div>
+          </div>
+        </div>
+        <div class="contact-card" data-cat="vendor">
+          <div class="avatar vendor">DOL</div>
+          <div class="contact-main">
+            <div class="contact-top"><span class="contact-name">U.S. Department of Labor</span><span class="role-badge vendor">Government</span></div>
+            <div class="contact-sub">Handles PERM / LCA filing review</div>
+            <div class="contact-meta"><span>&#127760; dol.gov</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="screen" id="screen-settings">
+      <div class="topbar">
+        <div><h1>Settings</h1><p>Account, team, and compliance configuration</p></div>
+      </div>
+      <div class="settings-layout">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" data-set="profile">Profile</div>
+          <div class="settings-nav-item" data-set="team">Team Members</div>
+          <div class="settings-nav-item" data-set="roles">Roles &amp; Permissions</div>
+          <div class="settings-nav-item" data-set="notify">Notification Preferences</div>
+          <div class="settings-nav-item" data-set="security">Security &amp; Compliance</div>
+        </div>
+        <div class="settings-content">
+
+          <div class="settings-section active" id="set-profile">
+            <div class="card">
+              <div class="profile-head">
+                <div class="avatar emp">EC</div>
+                <div><div class="pname">Emily Chen</div><div class="prole">HR Manager · People Ops</div></div>
+              </div>
+              <div class="settings-row"><span class="sr-label">Email</span><span>emily.chen@abc.com</span></div>
+              <div class="settings-row"><span class="sr-label">Phone</span><span>(415) 555-0100</span></div>
+              <div class="settings-row"><span class="sr-label">Department</span><span>People Ops</span></div>
+              <div class="settings-row"><span class="sr-label">Timezone</span><span>Pacific Time (UTC-8)</span></div>
+              <div class="settings-row"><span class="sr-label">Language</span><span>English</span></div>
+            </div>
+          </div>
+
+          <div class="settings-section" id="set-team">
+            <div class="card">
+              <div class="settings-row" style="border-bottom:none;padding-bottom:6px;">
+                <span class="sr-label">Team Members (6)</span>
+                <button class="btn gold" style="padding:6px 12px;font-size:12px;">+ Invite Member</button>
+              </div>
+              <div class="member-row"><div class="avatar emp">EC</div><div class="member-info"><div class="mname">Emily Chen</div><div class="memail">emily.chen@abc.com</div></div><span class="role-badge emp">Admin</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+              <div class="member-row"><div class="avatar emp">LB</div><div class="member-info"><div class="mname">Lisa Brown</div><div class="memail">lisa.brown@abc.com</div></div><span class="role-badge emp">HR Specialist</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+              <div class="member-row"><div class="avatar law">JS</div><div class="member-info"><div class="mname">John Smith</div><div class="memail">john.smith@lawfirm.com</div></div><span class="role-badge law">Law Firm Partner</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+              <div class="member-row"><div class="avatar law">RK</div><div class="member-info"><div class="mname">Rachel Kim</div><div class="memail">rachel.kim@lawfirm.com</div></div><span class="role-badge law">Law Firm Partner</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+              <div class="member-row"><div class="avatar emp">MZ</div><div class="member-info"><div class="mname">Michael Zhang</div><div class="memail">michael.zhang@abc.com</div></div><span class="role-badge vendor">Employee (Read-Only)</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+              <div class="member-row"><div class="avatar emp">SJ</div><div class="member-info"><div class="mname">Sarah Johnson</div><div class="memail">sarah.johnson@abc.com</div></div><span class="role-badge vendor">Employee (Read-Only)</span><span style="font-size:11.5px;color:var(--sub);width:70px;text-align:right;"><span class="status-dot"></span>Active</span></div>
+            </div>
+          </div>
+
+          <div class="settings-section" id="set-roles">
+            <div class="card">
+              <div class="settings-block">
+                <h4>HR / Admin</h4>
+                <div class="settings-row" style="border-bottom:none;">
+                  <div><div class="sr-desc">Full read/write access to all cases, report exports, user and permission management</div></div>
+                </div>
+              </div>
+              <div class="settings-block">
+                <h4>Law Firm Partner</h4>
+                <div class="settings-row" style="border-bottom:none;">
+                  <div><div class="sr-desc">Read/write access to assigned cases, limited to case details and documents</div></div>
+                </div>
+              </div>
+              <div class="settings-block" style="margin-bottom:0;">
+                <h4>Employee (Read-Only)</h4>
+                <div class="settings-row" style="border-bottom:none;">
+                  <div><div class="sr-desc">Read-only access to their own cases, can view progress and receive notifications</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" id="set-notify">
+            <div class="card">
+              <div class="settings-row"><div><div class="sr-label">Email Notifications</div><div class="sr-desc">Sent on case status changes and task assignments</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">In-App Notifications</div><div class="sr-desc">Real-time alerts in the Notifications module</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">RFE Urgent Alerts</div><div class="sr-desc">Multi-channel reminders 7/3/1 days before the RFE response deadline</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">Case Status Change Alerts</div><div class="sr-desc">Notify the owner when a case enters a new stage</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">Weekly Summary Report</div><div class="sr-desc">Emailed every Monday with the team's case progress summary</div></div><div class="switch" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+            </div>
+          </div>
+
+          <div class="settings-section" id="set-security">
+            <div class="card">
+              <div class="settings-row"><div><div class="sr-label">Two-Factor Authentication (2FA)</div><div class="sr-desc">Requires an extra code at login</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">Session Timeout</div><div class="sr-desc">Automatically logs out after 30 minutes of inactivity</div></div><span style="color:var(--sub);">30 minutes</span></div>
+              <div class="settings-row"><div><div class="sr-label">Audit Log Retention</div><div class="sr-desc">Meets compliance audit requirements</div></div><span style="color:var(--sub);">2 years</span></div>
+              <div class="settings-row"><div><div class="sr-label">Sensitive Field Masking</div><div class="sr-desc">SSN and similar fields fully visible to admins only</div></div><div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+              <div class="settings-row"><div><div class="sr-label">Export Audit Log</div><div class="sr-desc">For external compliance audits</div></div><button class="btn ghost" style="padding:6px 12px;font-size:12px;">Export</button></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Wizard overlay -->
+<div id="wizard-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,27,51,0.45);z-index:50;align-items:center;justify-content:center;">
+  <div class="wizard-box">
+    <div class="wz-steps" id="wz-steps"></div>
+    <div id="wz-body"></div>
+  </div>
+</div>
+
+<script>
+function showScreen(name){
+  if(prototypeView==='law-firm' && !['dashboard','cases','case-detail','settings'].includes(name)){
+    name='cases';
+  }
+  if(name==='settings' && prototypeView==='law-firm'){
+    document.querySelectorAll('.settings-nav-item').forEach(item=>item.classList.toggle('active',item.dataset.set==='roles'));
+    document.querySelectorAll('.settings-section').forEach(section=>section.classList.toggle('active',section.id==='set-roles'));
+  }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-nav="'+name+'"]').forEach(n=>n.classList.add('active'));
+  if(name==='dashboard'){ document.querySelectorAll('.nav-item')[0].classList.add('active'); }
+
+  document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));
+  const bnavMatch = document.querySelector('.bnav-item[data-nav="'+name+'"]');
+  const moreScreens = ['notifications','notification-detail','reports','documents','contacts','settings'];
+  const bnavMoreEl = document.getElementById('bnav-more');
+  if(bnavMatch){ bnavMatch.classList.add('active'); }
+  else if(moreScreens.includes(name) && bnavMoreEl){ bnavMoreEl.classList.add('active'); }
+  else if(name==='dashboard'){ const bd = document.querySelector('.bnav-item[data-nav="dashboard"]'); if(bd) bd.classList.add('active'); }
+  window.scrollTo(0,0);
+}
+function bnavGo(name){
+  showScreen(name);
+  toggleMoreSheet(false);
+}
+function toggleMoreSheet(force){
+  const el = document.getElementById('more-sheet-overlay');
+  if(!el) return; // The desktop prototype has no mobile More sheet.
+  const open = typeof force==='boolean' ? force : !el.classList.contains('open');
+  el.classList.toggle('open', open);
+}
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>showScreen(item.dataset.nav));
+});
+/* ---- Cases data & rendering ---- */
+const stageSets = {
+  'H-1B': ['LCA','I-129','Approval','Visa Stamping','Complete'],
+  'I-140': ['Filed','RFE','Approved'],
+  'PERM': ['Prep','Recruitment','Audit','Filed','Certified'],
+  'Other': ['Filed','Review','Approved']
+};
+const casesData = {
+  'c1': { name:'Michael Zhang', role:'Software Engineer', employer:'ABC Tech Solutions Inc.', type:'H-1B', caseId:'H1B-2026-0012', statusClass:'process', statusLabel:'In Process', stageIdx:1, priorityDate:'N/A', filedDate:'Apr 1, 2026', nextStep:'I-129 Filing', nextDue:'Aug 20, 2026',
+    timeline:[['Apr 1, 2026','LCA Filed','approved','Completed'],['Apr 10, 2026','LCA Certified','approved','Completed'],['Apr 15, 2026','I-129 Filed','process','In progress'],['Aug 20, 2026','Next step due','audit','Pending']],
+    tasks:[['Submit I-129 supporting materials','process','In progress'],['Confirm pay stubs on file','approved','Completed']],
+    documents:['LCA_Certified.pdf','I129_Petition.pdf','Pay_Stub_March.pdf'],
+    notes:'Law firm note: confirmed the employee\'s work location change with them; no need to refile the LCA.' },
+  'c2': { name:'Sarah Johnson', role:'Product Manager', employer:'ABC Tech Solutions Inc.', type:'I-140', caseId:'I140-2026-0031', statusClass:'rfe', statusLabel:'RFE', stageIdx:1, priorityDate:'Jan 10, 2025', filedDate:'Feb 1, 2026', nextStep:'Submit RFE response', nextDue:'Aug 15, 2026',
+    timeline:[['Feb 1, 2026','I-140 Filed','approved','Completed'],['Apr 28, 2026','RFE Issued','rfe','Action needed'],['Aug 15, 2026','RFE Response Due','audit','Pending']],
+    tasks:[['Compile supplemental RFE evidence','process','In progress'],['Attorney reviewing draft response','process','Not started']],
+    documents:['I140_Petition.pdf','RFE_Notice.pdf'],
+    notes:'RFE requests supplemental evidence on job duties and specialty-occupation correspondence; the department manager has been asked for a supporting letter.' },
+  'c3': { name:'David Lee', role:'Data Analyst', employer:'ABC Tech Solutions Inc.', type:'PERM', caseId:'PERM-2026-0018', statusClass:'audit', statusLabel:'Audit', stageIdx:2, priorityDate:'—', filedDate:'Mar 1, 2026', nextStep:'Submit audit materials', nextDue:'Awaiting DOL notice',
+    timeline:[['Mar 1, 2026','Recruitment period started','approved','Completed'],['Mar 31, 2026','Recruitment period ended','approved','Completed'],['Apr 20, 2026','Selected for audit','audit','In progress']],
+    tasks:[['Compile recruitment process records','process','In progress'],['Archive job description on file','approved','Completed']],
+    documents:['Recruitment_Report.pdf','Job_Posting_Ads.pdf'],
+    notes:'Routine random audit, not related to any issue with the application materials; expected turnaround 4-6 months.' },
+  'c4': { name:'James Wilson', role:'Project Manager', employer:'ABC Tech Solutions Inc.', type:'I-140', caseId:'I140-2026-0009', statusClass:'approved', statusLabel:'Approved', stageIdx:2, priorityDate:'Jun 5, 2024', filedDate:'Jan 15, 2026', nextStep:'—', nextDue:'Completed',
+    timeline:[['Jan 15, 2026','I-140 Filed','approved','Completed'],['Apr 20, 2026','I-140 Approved','approved','Completed']],
+    tasks:[['Archive approval notice','approved','Completed']],
+    documents:['I140_Approval_Notice.pdf'],
+    notes:'Approved. The employee can now plan the next steps toward a green card.' },
+  'c5': { name:'Emily Davis', role:'UX Designer', employer:'ABC Tech Solutions Inc.', type:'H-1B', caseId:'H1B-2026-0041', statusClass:'process', statusLabel:'In Process', stageIdx:0, priorityDate:'N/A', filedDate:'May 1, 2026', nextStep:'LCA Filing', nextDue:'Aug 25, 2026',
+    timeline:[['May 1, 2026','Case opened','approved','Completed'],['Aug 25, 2026','LCA Filing','process','Pending']],
+    tasks:[['Collect degree evaluation documents','process','In progress']],
+    documents:['Degree_Evaluation.pdf'],
+    notes:'First-time H-1B application; an additional credential evaluation (WES) is required.' },
+  'c6': { name:'Lisa Chen', role:'Marketing Specialist', employer:'ABC Tech Solutions Inc.', type:'PERM', caseId:'PERM-2025-0087', statusClass:'approved', statusLabel:'Certified', stageIdx:4, priorityDate:'—', filedDate:'Oct 1, 2025', nextStep:'—', nextDue:'Completed',
+    timeline:[['Oct 1, 2025','Recruitment process completed','approved','Completed'],['Dec 15, 2025','PERM Filed','approved','Completed'],['Apr 15, 2026','PERM Certified','approved','Completed']],
+    tasks:[['Archive certification notice','approved','Completed']],
+    documents:['PERM_Certified.pdf'],
+    notes:'Certified. Next step is to assist with preparing the I-140 application.' },
+  'c7': { name:'Kevin Park', role:'Research Scientist', employer:'ABC Tech Solutions Inc.', type:'Other', caseId:'O1-2026-0005', statusClass:'process', statusLabel:'In Process', stageIdx:1, priorityDate:'N/A', filedDate:'Apr 10, 2026', nextStep:'Under USCIS review', nextDue:'Est. 6-8 weeks',
+    timeline:[['Apr 10, 2026','O-1 Filed','approved','Completed'],['Apr 12, 2026','Entered review','process','In progress']],
+    tasks:[['Prepare Premium Processing request','process','In progress']],
+    documents:['O1_Petition.pdf','Recommendation_Letters.pdf'],
+    notes:'Client requested expedited handling; the Premium Processing fee has been submitted.' },
+  'c8': { name:'Anna Wu', role:'Business Analyst', employer:'ABC Tech Solutions Inc.', type:'H-1B', caseId:'H1B-2025-0077', statusClass:'process', statusLabel:'In Process', stageIdx:2, priorityDate:'N/A', filedDate:'Feb 1, 2026', nextStep:'Awaiting USCIS approval', nextDue:'Est. Sep 10, 2026',
+    timeline:[['Feb 1, 2026','LCA Certified','approved','Completed'],['Feb 20, 2026','I-129 Filed','approved','Completed'],['Sep 10, 2026','Approval expected','process','Pending']],
+    tasks:[['Follow up on USCIS case status','process','In progress']],
+    documents:['I129_Receipt_Notice.pdf'],
+    notes:'Standard processing, not expedited; a decision is expected within 90 days.' }
+};
+let newCaseCounter = 0;
+
+/* ---- Prototype view scope: client-side simulation, not authentication ---- */
+let prototypeView = 'hr';
+const DEMO_PARTNER_ID = 'alex-morgan';
+const demoPartners = { 'alex-morgan':'Alex Morgan', 'jordan-lee':'Jordan Lee' };
+// These are fictional assignments, independent of the HR task owner.
+const sampleAssignments = {
+  c1:'alex-morgan', c2:'alex-morgan', c3:'jordan-lee', c4:'jordan-lee',
+  c5:'jordan-lee', c6:'jordan-lee', c7:'alex-morgan', c8:null
+};
+Object.entries(sampleAssignments).forEach(([id,partner])=>{ casesData[id].lawFirmPartnerId=partner; });
+function canViewCase(id){
+  const record=casesData[id];
+  return !!record && (prototypeView==='hr' || record.lawFirmPartnerId===DEMO_PARTNER_ID);
+}
+function visibleCaseIds(){ return Object.keys(casesData).filter(canViewCase); }
+function partnerName(record){ return demoPartners[record.lawFirmPartnerId] || 'Unassigned'; }
+/* ---- End prototype view scope ---- */
+
+function setPrototypeView(view){
+  prototypeView=view==='law-firm' ? 'law-firm' : 'hr';
+  const partner=prototypeView==='law-firm';
+  document.getElementById('prototype-view-select').value=prototypeView;
+  document.getElementById('workspace-profile').innerHTML=partner ? 'Alex Morgan<br>Law Firm Partner · Demo' : 'Emily Chen<br>HR Manager';
+  document.querySelector('#screen-dashboard h1').textContent=partner ? 'Your cases, Alex' : 'Good afternoon, Emily';
+  document.getElementById('prototype-view-status').textContent=partner ? 'Alex Morgan view · Assigned cases only' : 'HR view · All cases';
+  document.querySelectorAll('[data-nav]').forEach(item=>{
+    item.hidden=partner && !['dashboard','cases','settings'].includes(item.dataset.nav);
+  });
+  const moreButton=document.getElementById('bnav-more');
+  if(moreButton) moreButton.hidden=partner;
+  document.querySelectorAll('[onclick="openWizard()"],.bell-btn-desktop').forEach(item=>{ item.hidden=partner; });
+  document.querySelectorAll('.settings-nav-item').forEach(item=>{ item.hidden=partner && item.dataset.set!=='roles'; });
+  document.getElementById('case-search').value='';
+  document.getElementById('case-filter-type').value='all';
+  document.getElementById('case-filter-status').value='all';
+  closeWizard();
+  toggleMoreSheet(false);
+  currentCaseId=null;
+  renderCaseList();
+  renderDashboard();
+  showScreen('cases');
+}
+
+function tagClass(sc){ return 'tag '+sc; }
+
+function renderCaseList(){
+  const searchEl = document.getElementById('case-search');
+  const typeEl = document.getElementById('case-filter-type');
+  const statusEl = document.getElementById('case-filter-status');
+  const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  const ft = typeEl ? typeEl.value : 'all';
+  const fs = statusEl ? statusEl.value : 'all';
+  const container = document.getElementById('case-list-container');
+  const ids = visibleCaseIds();
+  const filtered = ids.filter(id=>{
+    const c = casesData[id];
+    if(ft!=='all' && c.type!==ft) return false;
+    if(fs!=='all' && c.statusClass!==fs) return false;
+    if(q && !(c.name.toLowerCase().includes(q) || c.employer.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('cases-count').textContent = ids.length+(prototypeView==='law-firm' ? ' cases assigned to Alex Morgan' : ' cases total')+' · showing '+filtered.length;
+  if(filtered.length===0){
+    container.innerHTML = '<tr><td colspan="6" style="color:var(--sub);text-align:center;padding:24px;">No matching cases. Try adjusting the filters.</td></tr>';
+    return;
+  }
+  container.innerHTML = filtered.map(id=>{
+    const c = casesData[id];
+    return `<tr onclick="openCase('${id}')">
+      <td><div class="ct-name">${c.name}</div><div class="ct-sub">${c.role}</div></td>
+      <td>${c.type}<div class="ct-sub">Law firm: ${partnerName(c)}</div></td>
+      <td class="${tagClass(c.statusClass)}">${c.statusLabel}</td>
+      <td>${c.nextStep==='—'?'Completed':c.nextStep}</td>
+      <td class="${/^(Due today|In [1-3] days?)$/.test(c.nextDue)?'tag rfe':''}">${c.nextDue}</td>
+      <td><span class="ct-owner">EC</span></td>
+    </tr>`;
+  }).join('');
+}
+['case-search'].forEach(id=>{ document.addEventListener('input', e=>{ if(e.target && e.target.id===id) renderCaseList(); }); });
+document.addEventListener('change', e=>{ if(e.target && (e.target.id==='case-filter-type'||e.target.id==='case-filter-status')) renderCaseList(); });
+
+let currentCaseId = null;
+function openCase(id){
+  const requestedId=id || currentCaseId;
+  if(!canViewCase(requestedId)){
+    currentCaseId=null;
+    document.getElementById('prototype-view-status').textContent='This case is not assigned to Alex Morgan. Showing assigned cases only.';
+    showScreen('cases');
+    return;
+  }
+  currentCaseId = requestedId;
+  const c = casesData[currentCaseId];
+  if(!c) return;
+  document.getElementById('cd-name').textContent = c.name;
+  document.getElementById('cd-sub').textContent = c.role+' · '+c.employer+' · Case ID '+c.caseId;
+  const tagEl = document.getElementById('cd-status-tag');
+  tagEl.className = tagClass(c.statusClass);
+  tagEl.textContent = c.statusLabel;
+
+  const isDone = c.nextStep==='—';
+  document.getElementById('cd-next-action').style.display = isDone ? 'none' : '';
+  if(!isDone){
+    document.getElementById('cd-na-title').textContent = c.nextStep;
+    document.getElementById('cd-na-meta').textContent = 'Due '+c.nextDue+' · Assigned to Emily';
+  }
+
+  const stages = stageSets[c.type];
+  document.getElementById('cd-stepper').innerHTML = stages.map((s,i)=>{
+    const cls = i<c.stageIdx?'done':(i===c.stageIdx?'now':'');
+    const line = i<stages.length-1 ? '<span class="si-line"></span>' : '';
+    return `<span class="si-step ${cls}"><span class="si-dot"></span>${s}</span>${line}`;
+  }).join('');
+
+  document.getElementById('cd-info-grid').innerHTML = `
+    <div><span>Employee</span>${c.name}</div>
+    <div><span>Employer</span>${c.employer}</div>
+    <div><span>Case Type</span>${c.type}</div>
+    <div><span>Law Firm Partner</span>${partnerName(c)}</div>
+    <div><span>Priority Date</span>${c.priorityDate}</div>
+    <div><span>Filed Date</span>${c.filedDate}</div>
+    <div><span>Status</span>${c.statusLabel}</div>
+    <div><span>Next Step</span>${c.nextStep}</div>
+    <div><span>Next Due</span>${c.nextDue}</div>`;
+
+  document.getElementById('cd-timeline').innerHTML = c.timeline.map(t=>
+    `<div class="row"><span>${t[0]} &nbsp; ${t[1]}</span><span class="${tagClass(t[2])}">${t[3]}</span></div>`).join('');
+
+  document.getElementById('cd-tasks').innerHTML = c.tasks.map(t=>
+    `<div class="row"><span>${t[0]}</span><span class="${tagClass(t[1])}">${t[2]}</span></div>`).join('');
+
+  document.getElementById('cd-documents').innerHTML = c.documents.map(d=>
+    `<div class="row">${d}</div>`).join('');
+
+  document.getElementById('cd-notes').innerHTML = `<div class="row">${c.notes}</div>`;
+
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab[data-tab="overview"]').classList.add('active');
+  document.getElementById('tab-overview').classList.add('active');
+
+  showScreen('case-detail');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-nav="cases"]').forEach(n=>n.classList.add('active'));
+  document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.bnav-item[data-nav="cases"]').forEach(n=>n.classList.add('active'));
+}
+renderCaseList();
+
+/* ---- Tasks data & rendering ---- */
+const tasksData = [
+  { id:'t1', title:'Review I-140 RFE response', assignee:'Sarah Johnson', caseId:'c2', due:'Due today', priority:'high', status:'pending' },
+  { id:'t2', title:'Compile supplemental RFE evidence', assignee:'Sarah Johnson', caseId:'c2', due:'In 3 days', priority:'high', status:'pending' },
+  { id:'t3', title:'Prepare Premium Processing request', assignee:'Kevin Park', caseId:'c7', due:'In 1 day', priority:'high', status:'pending' },
+  { id:'t4', title:'Upload H-1B pay stubs', assignee:'Michael Zhang', caseId:'c1', due:'In 2 days', priority:'medium', status:'pending' },
+  { id:'t5', title:'PERM recruitment report', assignee:'David Lee', caseId:'c3', due:'In 5 days', priority:'medium', status:'pending' },
+  { id:'t6', title:'Collect degree evaluation (WES)', assignee:'Emily Davis', caseId:'c5', due:'In 4 days', priority:'medium', status:'pending' },
+  { id:'t7', title:'Update visa stamping documents', assignee:'Emily Davis', caseId:'c5', due:'In 7 days', priority:'low', status:'pending' },
+  { id:'t8', title:'Follow up on I-94 expiration', assignee:'James Wilson', caseId:'c4', due:'In 10 days', priority:'low', status:'pending' },
+  { id:'t9', title:'Confirm pay stubs on file', assignee:'Michael Zhang', caseId:'c1', due:'Completed', priority:'medium', status:'completed' },
+  { id:'t10', title:'Archive approval notice', assignee:'James Wilson', caseId:'c4', due:'Completed', priority:'low', status:'completed' },
+  { id:'t11', title:'Archive certification notice', assignee:'Lisa Chen', caseId:'c6', due:'Completed', priority:'low', status:'completed' },
+];
+const prioLabel = { high:'High', medium:'Medium', low:'Low' };
+
+function renderTasks(){
+  const searchEl = document.getElementById('task-search');
+  const prioEl = document.getElementById('task-filter-priority');
+  const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  const pf = prioEl ? prioEl.value : 'all';
+  const activeSub = document.querySelector('.subtab[data-subtab="tasks"].active');
+  const view = activeSub ? activeSub.dataset.view : 'pending';
+
+  document.getElementById('cnt-pending').textContent = tasksData.filter(t=>t.status==='pending').length;
+  document.getElementById('cnt-completed').textContent = tasksData.filter(t=>t.status==='completed').length;
+  document.getElementById('cnt-all').textContent = tasksData.length;
+  document.getElementById('tasks-count').textContent = tasksData.length+' tasks total · sorted by priority and due date';
+
+  let list = tasksData.filter(t=>{
+    if(view==='pending' && t.status!=='pending') return false;
+    if(view==='completed' && t.status!=='completed') return false;
+    if(pf!=='all' && t.priority!==pf) return false;
+    if(q && !(t.title.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  const container = document.getElementById('task-list-container');
+  if(list.length===0){
+    container.innerHTML = '<div class="row" style="color:var(--sub);">No matching tasks.</div>';
+    return;
+  }
+  container.innerHTML = list.map(t=>{
+    const c = casesData[t.caseId];
+    const caseLabel = c ? (c.name!==t.assignee ? c.name+' · '+c.type : c.type) : '';
+    return `<div class="task-row ${t.status==='completed'?'done':''}">
+      <input type="checkbox" ${t.status==='completed'?'checked':''} onchange="toggleTask('${t.id}')">
+      <div class="task-main">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">${t.assignee}${c?' · <a onclick="openCase(\''+t.caseId+'\')">'+caseLabel+'</a>':''}</div>
+      </div>
+      <div class="task-right">
+        <span class="prio prio-${t.priority}">${prioLabel[t.priority]}</span>
+        <span style="font-size:11px;color:var(--sub);">${t.due}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleTask(id){
+  const t = tasksData.find(x=>x.id===id);
+  if(t){ t.status = t.status==='completed' ? 'pending' : 'completed'; t.due = t.status==='completed' ? 'Completed' : t.due; }
+  renderTasks();
+  if(typeof renderDashboard==='function') renderDashboard();
+}
+document.querySelectorAll('.subtab[data-subtab="tasks"]').forEach(st=>{
+  st.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab[data-subtab="tasks"]').forEach(t=>t.classList.remove('active'));
+    st.classList.add('active');
+    renderTasks();
+  });
+});
+['task-search','task-filter-priority'].forEach(id=>{
+  document.addEventListener('input', e=>{ if(e.target && e.target.id===id) renderTasks(); });
+  document.addEventListener('change', e=>{ if(e.target && e.target.id===id) renderTasks(); });
+});
+renderTasks();
+
+/* ---- Calendar ---- */
+const CAL_TODAY = new Date(2026,7,8); // Aug 8, 2026
+const calState = { year:2026, month:7 }; // Aug 2026 (0-indexed)
+let calSelectedKey = null;
+
+function dkey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function relDateFromToday(str){
+  if(str==='Due today') return new Date(CAL_TODAY);
+  const m = str.match(/In (\d+) days?/);
+  if(m){ const d = new Date(CAL_TODAY); d.setDate(d.getDate()+parseInt(m[1],10)); return d; }
+  return null;
+}
+function buildCalendarEvents(){
+  const map = {};
+  const add = (dateObj, ev)=>{
+    if(!dateObj || isNaN(dateObj)) return;
+    const k = dkey(dateObj);
+    if(!map[k]) map[k]=[];
+    map[k].push(ev);
+  };
+  Object.keys(casesData).forEach(cid=>{
+    const c = casesData[cid];
+    c.timeline.forEach(t=>{
+      const d = new Date(t[0]);
+      add(d, { title:t[1], sub:c.name+' · '+c.type, tagClass:t[2], tagLabel:t[3], caseId:cid });
+    });
+  });
+  tasksData.filter(t=>t.status==='pending').forEach(t=>{
+    const d = relDateFromToday(t.due);
+    const cs = casesData[t.caseId];
+    const subParts = [t.assignee];
+    if(cs && cs.name!==t.assignee) subParts.push(cs.name);
+    if(cs) subParts.push(cs.type);
+    if(d){ add(d, { title:t.title, sub:subParts.join(' · '), tagClass:'prio-'+t.priority, tagLabel:prioLabel[t.priority], caseId:t.caseId, isTask:true }); }
+  });
+  return map;
+}
+
+function calNav(dir){
+  calState.month += dir;
+  if(calState.month<0){ calState.month=11; calState.year--; }
+  if(calState.month>11){ calState.month=0; calState.year++; }
+  calSelectedKey = null;
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const events = buildCalendarEvents();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent = monthNames[calState.month]+' '+calState.year;
+
+  const first = new Date(calState.year, calState.month, 1);
+  const startWeekday = first.getDay();
+  const daysInMonth = new Date(calState.year, calState.month+1, 0).getDate();
+  const grid = document.getElementById('cal-grid');
+  let html = '';
+  for(let i=0;i<startWeekday;i++) html += '<div class="cal-cell empty"></div>';
+  for(let day=1; day<=daysInMonth; day++){
+    const d = new Date(calState.year, calState.month, day);
+    const k = dkey(d);
+    const isToday = (k === dkey(CAL_TODAY));
+    const isSelected = (k === calSelectedKey) || (!calSelectedKey && isToday);
+    const hasEvents = !!events[k];
+    html += `<div class="cal-cell ${isToday?'today':''} ${isSelected?'selected':''}" onclick="calSelectDay('${k}')">
+      <span class="d">${day}${hasEvents?'<span class="dot"></span>':''}</span>
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  const inTodayMonth = (calState.month===CAL_TODAY.getMonth() && calState.year===CAL_TODAY.getFullYear());
+  const selKey = calSelectedKey || (inTodayMonth ? dkey(CAL_TODAY) : null);
+  renderCalDay(selKey, events);
+}
+
+function calSelectDay(k){
+  calSelectedKey = k;
+  renderCalendar();
+}
+
+function renderCalDay(k, events){
+  const titleEl = document.getElementById('cal-day-title');
+  const listEl = document.getElementById('cal-day-events');
+  if(!k){ titleEl.textContent='Select a date'; listEl.innerHTML=''; return; }
+  const d = new Date(k+'T00:00:00');
+  const opts = { month:'short', day:'numeric', year:'numeric' };
+  titleEl.textContent = d.toLocaleDateString('en-US', opts) + (k===dkey(CAL_TODAY)?' (Today)':'');
+  const list = (events||buildCalendarEvents())[k] || [];
+  if(list.length===0){ listEl.innerHTML = '<div class="row" style="color:var(--sub);">Nothing scheduled this day.</div>'; return; }
+  listEl.innerHTML = list.map(ev=>
+    `<div class="row" style="cursor:${ev.caseId?'pointer':'default'};" ${ev.caseId?`onclick="openCase('${ev.caseId}')"`:''}>
+      <span>${ev.title}<br><span style="color:var(--sub);font-size:11px;">${ev.sub}</span></span>
+      <span class="${ev.isTask? 'prio '+ev.tagClass : tagClass(ev.tagClass)}">${ev.tagLabel}</span>
+    </div>`).join('');
+}
+renderCalendar();
+
+/* ---- Notifications data & rendering ---- */
+const notificationsData = [
+  { id:'n1', type:'rfe', typeLabel:'RFE', tagClass:'rfe', title:'I-140 RFE received', caseId:'c2', timeAgo:'2h ago',
+    body:'Sarah Johnson\'s I-140 case received a Request for Evidence (RFE). USCIS is asking for supplemental evidence on job duties and specialty-occupation correspondence. Please contact the law firm partner as soon as possible to prepare a response.',
+    unread:true, important:true },
+  { id:'n2', type:'document', typeLabel:'Document', tagClass:'process', title:'H-1B document uploaded', caseId:'c1', timeAgo:'4h ago',
+    body:'The law firm partner uploaded the latest I-129 Petition for Michael Zhang\'s H-1B case. View it under the Documents tab on the case detail page.',
+    unread:true, important:false },
+  { id:'n3', type:'approved', typeLabel:'Approved', tagClass:'approved', title:'Case approved', caseId:'c4', timeAgo:'1 day ago',
+    body:'James Wilson\'s I-140 case has been approved by USCIS. Consider helping the employee plan the timeline for the next green-card stage.',
+    unread:true, important:false },
+  { id:'n4', type:'audit', typeLabel:'Audit', tagClass:'audit', title:'PERM audit notice', caseId:'c3', timeAgo:'2 days ago',
+    body:'David Lee\'s PERM case was selected for a routine audit by the DOL. This is a standard random check and does not indicate an issue with the application materials; please help compile the recruitment process records for reference.',
+    unread:true, important:true },
+  { id:'n5', type:'reminder', typeLabel:'Reminder', tagClass:'rfe', title:'I-94 expiration reminder', caseId:'c4', timeAgo:'3 days ago',
+    body:'James Wilson\'s I-94 record is approaching expiration. Consider confirming an extension or next status arrangement ahead of time to avoid a gap in status.',
+    unread:false, important:false },
+  { id:'n6', type:'reminder', typeLabel:'Reminder', tagClass:'audit', title:'Visa stamping document needs updating', caseId:'c5', timeAgo:'4 days ago',
+    body:'Emily Davis\'s H-1B case is still missing the degree evaluation, which will affect the LCA filing timeline. Please follow up on collecting the WES evaluation.',
+    unread:false, important:false },
+];
+let currentNotiId = null;
+
+function renderNotiList(){
+  const activeSub = document.querySelector('.subtab[data-subtab="noti"].active');
+  const view = activeSub ? activeSub.dataset.view : 'all';
+  const unreadCount = notificationsData.filter(n=>n.unread).length;
+  document.getElementById('noti-count').textContent = unreadCount+' unread · '+notificationsData.length+' total';
+
+  let list = notificationsData.filter(n=>{
+    if(view==='unread') return n.unread;
+    if(view==='important') return n.important;
+    return true;
+  });
+
+  const container = document.getElementById('noti-list-container');
+  if(list.length===0){
+    container.innerHTML = '<div class="row" style="color:var(--sub);">No notifications here.</div>';
+    return;
+  }
+  container.innerHTML = list.map(n=>{
+    const c = casesData[n.caseId];
+    return `<div class="noti-row ${n.unread?'':'read'}" onclick="openNotiDetail('${n.id}')">
+      <div class="unread-dot"></div>
+      <div class="noti-main">
+        <div class="noti-title"><span class="${tagClass(n.tagClass)}" style="margin-right:8px;">${n.typeLabel}</span>${n.title}</div>
+        <div class="noti-sub">${c?c.name+' · '+c.type:''}</div>
+      </div>
+      <div class="noti-right">
+        ${n.important?'<span class="star">&#9733;</span>':''}
+        <span style="color:var(--muted);font-size:11px;">${n.timeAgo}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function markAllRead(){
+  notificationsData.forEach(n=>n.unread=false);
+  renderNotiList();
+}
+document.querySelectorAll('.subtab[data-subtab="noti"]').forEach(st=>{
+  st.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab[data-subtab="noti"]').forEach(t=>t.classList.remove('active'));
+    st.classList.add('active');
+    renderNotiList();
+  });
+});
+
+function openNotiDetail(id){
+  currentNotiId = id;
+  const n = notificationsData.find(x=>x.id===id);
+  if(!n) return;
+  n.unread = false;
+  const c = casesData[n.caseId];
+
+  document.getElementById('nd-title').textContent = n.title;
+  document.getElementById('nd-time').textContent = n.timeAgo+(c?' · Related case '+c.caseId:'');
+  const tagEl = document.getElementById('nd-type-tag');
+  tagEl.className = tagClass(n.tagClass);
+  tagEl.textContent = n.typeLabel;
+  document.getElementById('nd-body').textContent = n.body;
+
+  const caseCard = document.getElementById('nd-case-card');
+  if(c){
+    caseCard.style.display = '';
+    document.getElementById('nd-case-name').textContent = c.name+' · '+c.type;
+    document.getElementById('nd-case-sub').textContent = c.role+' · Current status: '+c.statusLabel;
+  } else {
+    caseCard.style.display = 'none';
+  }
+
+  document.getElementById('nd-toggle-read-btn').textContent = n.unread ? 'Mark as read' : 'Mark as unread';
+  document.getElementById('nd-toggle-important-btn').textContent = n.important ? 'Unmark as important' : 'Mark as important';
+
+  showScreen('notification-detail');
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-nav="notifications"]').forEach(x=>x.classList.add('active'));
+  document.querySelectorAll('.bnav-item').forEach(x=>x.classList.remove('active'));
+  const bnavMoreEl2 = document.getElementById('bnav-more');
+  if(bnavMoreEl2) bnavMoreEl2.classList.add('active');
+  renderNotiList();
+}
+function toggleNotiRead(){
+  const n = notificationsData.find(x=>x.id===currentNotiId);
+  if(!n) return;
+  n.unread = !n.unread;
+  document.getElementById('nd-toggle-read-btn').textContent = n.unread ? 'Mark as read' : 'Mark as unread';
+  renderNotiList();
+}
+function toggleNotiImportant(){
+  const n = notificationsData.find(x=>x.id===currentNotiId);
+  if(!n) return;
+  n.important = !n.important;
+  document.getElementById('nd-toggle-important-btn').textContent = n.important ? 'Unmark as important' : 'Mark as important';
+}
+function openCaseFromNoti(){
+  const n = notificationsData.find(x=>x.id===currentNotiId);
+  if(n && casesData[n.caseId]) openCase(n.caseId);
+}
+renderNotiList();
+
+/* ---- Reports ---- */
+const CASE_TYPES = ['H-1B','I-140','PERM','Other'];
+const STATUS_KEYS = [
+  {key:'process', label:'In Process'},
+  {key:'rfe', label:'RFE'},
+  {key:'audit', label:'Audit'},
+  {key:'approved', label:'Approved/Certified'},
+];
+function allCases(){ return visibleCaseIds().map(id=>({id, ...casesData[id]})); }
+
+function renderReportsOverview(){
+  const cases = allCases();
+  const activeCases = cases.length;
+  const approvals = cases.filter(c=>c.statusLabel==='Approved'||c.statusLabel==='Certified').length;
+  const pendingTasks = tasksData.filter(t=>t.status==='pending').length;
+  const expiringSoon = tasksData.filter(t=>t.status==='pending' && (t.due==='Due today' || /^In [1-7] days?$/.test(t.due))).length;
+
+  document.getElementById('rep-stat-cards').innerHTML = `
+    <div class="card stat"><div class="num">${activeCases}</div><div class="lbl">ACTIVE CASES</div></div>
+    <div class="card stat"><div class="num">${approvals}</div><div class="lbl">APPROVED / CERTIFIED</div></div>
+    <div class="card stat"><div class="num">${pendingTasks}</div><div class="lbl">PENDING TASKS</div></div>
+    <div class="card stat"><div class="num">${expiringSoon}</div><div class="lbl">EXPIRING WITHIN 7 DAYS</div></div>`;
+
+  const dist = {};
+  cases.forEach(c=>{ dist[c.statusLabel] = (dist[c.statusLabel]||0)+1; });
+  const colors = { 'In Process':'#58728A','RFE':'#B9564B','Audit':'#B7863D','Approved':'#4F7D62','Certified':'#4F7D62' };
+  const total = cases.length;
+  let offset = 0;
+  const circles = Object.keys(dist).map(k=>{
+    const pct = (dist[k]/total*100);
+    const seg = `<circle cx="21" cy="21" r="15.9" fill="transparent" stroke="${colors[k]||'#999'}" stroke-width="6" stroke-dasharray="${pct.toFixed(1)} ${(100-pct).toFixed(1)}" stroke-dashoffset="${(25-offset).toFixed(1)}"></circle>`;
+    offset += pct;
+    return seg;
+  }).join('');
+  const legend = Object.keys(dist).map(k=>
+    `<div><span class="sw" style="background:${colors[k]||'#999'}"></span>${k}　${dist[k]} (${Math.round(dist[k]/total*100)}%)</div>`).join('');
+  document.getElementById('rep-donut-wrap').innerHTML = `
+    <svg class="donut" width="120" height="120" viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#EDEDED" stroke-width="6"></circle>
+      ${circles}
+    </svg>
+    <div class="legend">${legend}</div>`;
+
+  const today = CAL_TODAY;
+  const openTypes = {};
+  CASE_TYPES.forEach(t=>openTypes[t]=[]);
+  cases.forEach(c=>{
+    if(c.statusLabel==='Approved'||c.statusLabel==='Certified') return;
+    const filed = new Date(c.filedDate);
+    if(isNaN(filed)) return;
+    const days = Math.round((today-filed)/86400000);
+    if(days>=0) openTypes[c.type].push(days);
+  });
+  const maxDays = Math.max(1, ...Object.values(openTypes).flat());
+  document.getElementById('rep-avg-days').innerHTML = CASE_TYPES.map(t=>{
+    const arr = openTypes[t];
+    const avg = arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
+    const pct = arr.length ? Math.round(avg/maxDays*100) : 0;
+    return `<div class="avg-bar-row">
+      <div class="avg-bar-label"><span>${t}</span><span>${arr.length? avg+' days ('+arr.length+' in progress)' : 'No cases in progress'}</span></div>
+      <div class="avg-bar-track"><div class="avg-bar-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderReportsCases(){
+  const cases = allCases();
+  let thead = '<tr><th>Type</th>'+STATUS_KEYS.map(s=>'<th>'+s.label+'</th>').join('')+'<th>Total</th></tr>';
+  let rows = CASE_TYPES.map(t=>{
+    const typeCases = cases.filter(c=>c.type===t);
+    const cells = STATUS_KEYS.map(s=>{
+      const n = typeCases.filter(c=> (s.key==='approved') ? (c.statusClass==='approved') : c.statusClass===s.key).length;
+      return '<td>'+(n||'—')+'</td>';
+    }).join('');
+    return '<tr><td>'+t+'</td>'+cells+'<td>'+typeCases.length+'</td></tr>';
+  }).join('');
+  document.getElementById('rep-crosstab').innerHTML = `<table class="crosstab-table">${thead}${rows}</table>`;
+
+  const attention = cases.filter(c=>c.statusClass==='rfe'||c.statusClass==='audit');
+  document.getElementById('rep-attention-list').innerHTML = attention.length ? attention.map(c=>
+    `<div class="row" style="cursor:pointer;" onclick="openCase('${c.id}')">
+      <span>${c.name} · ${c.type}<br><span style="color:var(--sub);font-size:11px;">${c.caseId} · Next: ${c.nextStep}</span></span>
+      <span class="${tagClass(c.statusClass)}">${c.statusLabel}</span>
+    </div>`).join('') : '<div class="row" style="color:var(--sub);">No cases currently need special attention.</div>';
+}
+
+function renderReportsCompliance(){
+  const cases = allCases();
+  const rfeCount = cases.filter(c=>c.statusClass==='rfe').length;
+  const auditCount = cases.filter(c=>c.statusClass==='audit').length;
+  const overdueTasks = tasksData.filter(t=>t.status==='pending' && t.due==='Due today').length;
+  document.getElementById('rep-compliance-cards').innerHTML = `
+    <div class="card stat"><div class="num">96%</div><div class="lbl">Deadline Compliance Rate</div><div class="delta">Target 100%</div></div>
+    <div class="card stat"><div class="num">${rfeCount}</div><div class="lbl">RFE Cases</div></div>
+    <div class="card stat"><div class="num">${auditCount}</div><div class="lbl">Audit Cases</div></div>
+    <div class="card stat"><div class="num">${overdueTasks}</div><div class="lbl">Tasks Due Today</div></div>`;
+}
+
+function renderReportsAnalytics(){
+  const months = ['Mar','Apr','May','Jun','Jul','Aug'];
+  const filed =    [3,4,3,5,4,3];
+  const approved = [1,2,2,3,3,2];
+  const closed =   [0,1,1,2,2,3];
+  const maxV = Math.max(...filed, ...approved, ...closed);
+  const W=560,H=200,padL=30,padB=24,padT=10;
+  const stepX = (W-padL-20)/(months.length-1);
+  const scaleY = v => H-padB-(v/maxV)*(H-padB-padT);
+  function pathFor(arr){
+    return arr.map((v,i)=>(i===0?'M':'L')+(padL+i*stepX).toFixed(1)+' '+scaleY(v).toFixed(1)).join(' ');
+  }
+  function dotsFor(arr,color){
+    return arr.map((v,i)=>`<circle cx="${(padL+i*stepX).toFixed(1)}" cy="${scaleY(v).toFixed(1)}" r="3" fill="${color}"></circle>`).join('');
+  }
+  const axisLabels = months.map((m,i)=>`<text x="${(padL+i*stepX).toFixed(1)}" y="${H-6}" font-size="10" fill="var(--sub)" text-anchor="middle">${m}</text>`).join('');
+  document.getElementById('rep-trend-chart').innerHTML = `
+    <svg width="100%" viewBox="0 0 ${W} ${H}" style="overflow:visible;">
+      <path d="${pathFor(filed)}" fill="none" stroke="#3F6256" stroke-width="2"/>
+      ${dotsFor(filed,'#3F6256')}
+      <path d="${pathFor(approved)}" fill="none" stroke="#4F7D62" stroke-width="2"/>
+      ${dotsFor(approved,'#4F7D62')}
+      <path d="${pathFor(closed)}" fill="none" stroke="#9CA39C" stroke-width="2"/>
+      ${dotsFor(closed,'#9CA39C')}
+      ${axisLabels}
+    </svg>
+    <div class="legend" style="display:flex;gap:16px;margin-top:6px;">
+      <div><span class="sw" style="background:#3F6256"></span>Filed</div>
+      <div><span class="sw" style="background:#4F7D62"></span>Approved</div>
+      <div><span class="sw" style="background:#9CA39C"></span>Closed</div>
+    </div>`;
+}
+
+function renderReports(view){
+  if(view==='overview') renderReportsOverview();
+  if(view==='cases') renderReportsCases();
+  if(view==='compliance') renderReportsCompliance();
+  if(view==='analytics') renderReportsAnalytics();
+}
+document.querySelectorAll('.rtab').forEach(rt=>{
+  rt.addEventListener('click', ()=>{
+    document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.report-panel').forEach(p=>p.classList.remove('active'));
+    rt.classList.add('active');
+    const view = rt.dataset.rview;
+    document.getElementById('rep-'+view).classList.add('active');
+    renderReports(view);
+  });
+});
+renderReportsOverview();
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.subtab').forEach(st=>{
+  st.addEventListener('click', ()=>{
+    const group = st.dataset.subtab;
+    if(group==='tasks' || group==='noti') return; // handled by dedicated listeners
+    document.querySelectorAll('.subtab[data-subtab="'+group+'"]').forEach(t=>t.classList.remove('active'));
+    st.classList.add('active');
+    if(group==='contact'){
+      const cat = st.dataset.cat;
+      document.querySelectorAll('#screen-contacts .contact-card').forEach(c=>{
+        c.style.display = (cat==='all' || c.dataset.cat===cat) ? 'flex' : 'none';
+      });
+    }
+  });
+});
+
+const contactSearch = document.querySelector('.contact-search');
+if(contactSearch){
+  contactSearch.addEventListener('input', ()=>{
+    const q = contactSearch.value.trim().toLowerCase();
+    document.querySelectorAll('#screen-contacts .contact-card').forEach(c=>{
+      const text = c.textContent.toLowerCase();
+      c.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.subtab[data-subtab="contact"]').forEach(t=>t.classList.remove('active'));
+    document.querySelector('.subtab[data-subtab="contact"][data-cat="all"]').classList.add('active');
+  });
+}
+
+document.querySelectorAll('.settings-nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('set-'+item.dataset.set).classList.add('active');
+  });
+});
+
+/* ---- Wizard ---- */
+let wzStep = 1;
+let wzData = { type:'H-1B', name:'', email:'', position:'', dept:'', visaStatus:'None', priority:'', location:'', attorney:'' };
+const wzTitles = ['Case Type','Employee Info','Case Details','Confirm'];
+
+function renderStepsBar(){
+  const bar = document.getElementById('wz-steps');
+  bar.innerHTML = wzTitles.map((t,i)=>{
+    const n = i+1;
+    const cls = n<wzStep?'done':(n===wzStep?'now':'');
+    return `<div class="step ${cls}"><div class="circ">${n<wzStep?'&#10003;':n}</div><div class="lbl2">${t}</div></div>`;
+  }).join('');
+}
+
+function renderWizardBody(){
+  const body = document.getElementById('wz-body');
+  if(wzSubmitting){
+    body.innerHTML = `
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <h3>Creating case&hellip;</h3>
+        <div style="color:var(--sub);font-size:13px;">Saving employee information and setting up the case timeline.</div>
+      </div>`;
+    return;
+  }
+  if(wzStep===1){
+    body.innerHTML = `
+      <h3 style="margin-top:0;">Select Case Type</h3>
+      ${['H-1B|Temporary work visa','I-140|Immigrant petition','PERM|Labor certification','Other|Other case type'].map(o=>{
+        const [t,d]=o.split('|'); const sel = wzData.type===t?'sel':'';
+        return `<div class="type-opt ${sel}" onclick="selType('${t}')"><div class="r"></div><div><div class="t">${t}</div><div class="d">${d}</div></div></div>`;
+      }).join('')}
+      <div class="wz-foot"><span></span><button class="btn gold" onclick="wzNext()">Next</button></div>`;
+  } else if(wzStep===2){
+    const err = wzErrors || {};
+    body.innerHTML = `
+      <h3 style="margin-top:0;">Employee Information</h3>
+      <div class="wz-field ${err.name?'has-error':''}">
+        <label>Employee Name</label>
+        <input id="f-name" value="${wzData.name}" placeholder="Enter full name">
+        ${err.name?`<div class="wz-error-msg">${err.name}</div>`:''}
+      </div>
+      <div class="wz-field ${err.email?'has-error':''}">
+        <label>Email</label>
+        <input id="f-email" value="${wzData.email}" placeholder="name@company.com">
+        ${err.email?`<div class="wz-error-msg">${err.email}</div>`:''}
+      </div>
+      <div class="wz-field ${err.position?'has-error':''}">
+        <label>Job Title</label>
+        <input id="f-position" value="${wzData.position}" placeholder="Software Engineer">
+        ${err.position?`<div class="wz-error-msg">${err.position}</div>`:''}
+      </div>
+      <div class="wz-field"><label>Department</label><input id="f-dept" value="${wzData.dept}" placeholder="Engineering"></div>
+      <div class="wz-field"><label>Current Visa Status</label>
+        <select id="f-visa">
+          ${['None','F-1 OPT','H-1B','L-1','Other'].map(v=>`<option value="${v}" ${wzData.visaStatus===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="wz-foot"><button class="btn ghost" onclick="wzBack()">Back</button><button class="btn gold" onclick="wzNext()">Next</button></div>`;
+  } else if(wzStep===3){
+    body.innerHTML = `
+      <h3 style="margin-top:0;">Case Details</h3>
+      <div class="wz-field"><label>Priority Date</label><input id="f-priority" value="${wzData.priority}" placeholder="Select a date"></div>
+      <div class="wz-field"><label>Work Location</label><input id="f-location" value="${wzData.location}" placeholder="New York, NY"></div>
+      <div class="wz-field"><label>Assigned Attorney</label><input id="f-attorney" value="${wzData.attorney}" placeholder="Select an attorney"></div>
+      <div class="wz-foot"><button class="btn ghost" onclick="wzBack()">Back</button><button class="btn gold" onclick="wzNext()">Next</button></div>`;
+  } else if(wzStep===4){
+    body.innerHTML = `
+      <h3 style="margin-top:0;">Confirm &amp; Create</h3>
+      <div class="review-row"><span>Case Type</span><span>${wzData.type}</span></div>
+      <div class="review-row"><span>Employee</span><span>${wzData.name||'—'}</span></div>
+      <div class="review-row"><span>Job Title</span><span>${wzData.position||'—'}</span></div>
+      <div class="review-row"><span>Current Visa Status</span><span>${wzData.visaStatus||'—'}</span></div>
+      <div class="review-row"><span>Location</span><span>${wzData.location||'—'}</span></div>
+      <div class="review-row"><span>Priority Date</span><span>${wzData.priority||'—'}</span></div>
+      <div class="review-row"><span>Attorney</span><span>${wzData.attorney||'—'}</span></div>
+      <div class="wz-foot"><button class="btn ghost" onclick="wzBack()">Back</button><button class="btn gold" onclick="wzSubmit()">Create Case</button></div>`;
+  } else {
+    body.innerHTML = `
+      <div class="success-box">
+        <div class="ck">&#10003;</div>
+        <h3>Case created successfully!</h3>
+        <div style="color:var(--sub);font-size:13px;margin-bottom:20px;">Created a ${wzData.type} case for ${wzData.name||'this employee'}, case ID ${casesData[wzData._newId] ? casesData[wzData._newId].caseId : ''}</div>
+        <button class="btn gold" onclick="closeWizard(); openCase(wzData._newId);">View Case</button>
+        <button class="btn ghost" style="margin-left:8px;" onclick="wzStep=1; renderStepsBar(); renderWizardBody();">Create Another</button>
+      </div>`;
+  }
+}
+function selType(t){ wzData.type = t; renderWizardBody(); }
+function collectStep(){
+  if(wzStep===2){ wzData.name=val('f-name'); wzData.email=val('f-email'); wzData.position=val('f-position'); wzData.dept=val('f-dept'); wzData.visaStatus=val('f-visa'); }
+  if(wzStep===3){ wzData.priority=val('f-priority'); wzData.location=val('f-location'); wzData.attorney=val('f-attorney'); }
+}
+function val(id){ const el=document.getElementById(id); return el?el.value:''; }
+let wzErrors = {};
+function validateStep2(){
+  const errors = {};
+  if(!wzData.name.trim()) errors.name = 'Employee name is required.';
+  if(!wzData.email.trim()){
+    errors.email = 'Email is required.';
+  } else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(wzData.email.trim())){
+    errors.email = 'Enter a valid email address.';
+  }
+  if(!wzData.position.trim()) errors.position = 'Job title is required.';
+  return errors;
+}
+function wzNext(){
+  collectStep();
+  if(wzStep===2){
+    wzErrors = validateStep2();
+    if(Object.keys(wzErrors).length>0){
+      renderWizardBody();
+      return;
+    }
+  }
+  wzErrors = {};
+  wzStep++; renderStepsBar(); renderWizardBody();
+}
+function wzBack(){ collectStep(); wzStep--; renderStepsBar(); renderWizardBody(); }
+let wzSubmitting = false;
+function wzSubmit(){
+  wzSubmitting = true;
+  document.getElementById('wz-steps').style.display = 'none';
+  renderWizardBody();
+  setTimeout(function(){
+    wzSubmitting = false;
+    wzFinish();
+  }, 900);
+}
+function wzFinish(){
+  newCaseCounter++;
+  const newId = 'new'+newCaseCounter;
+  const stages = stageSets[wzData.type]||stageSets['Other'];
+  casesData[newId] = {
+    name: wzData.name||'Unnamed Employee', role: wzData.position||'—', employer: 'ABC Tech Solutions Inc.',
+    lawFirmPartnerId: null,
+    type: wzData.type, caseId: wzData.type.replace('-','')+'-2026-'+String(1000+newCaseCounter),
+    statusClass:'process', statusLabel:'In Process', stageIdx:0,
+    priorityDate: wzData.priority||'N/A', filedDate:'Aug 8, 2026', nextStep: stages[0]+' Filing', nextDue:'To be scheduled',
+    timeline:[['Aug 8, 2026','Case created','approved','Completed']],
+    tasks:[['Collect basic application materials','process','In progress']],
+    documents:[],
+    notes: 'New case. Current visa status: '+(wzData.visaStatus||'None')+'. Assigned attorney: '+(wzData.attorney||'Not yet assigned')+'.'
+  };
+  wzData._newId = newId;
+  wzStep=5; renderWizardBody(); document.getElementById('wz-steps').style.display='none';
+  renderCaseList();
+  if(typeof renderDashboard==='function') renderDashboard();
+}
+function openWizard(){ if(prototypeView!=='hr') return; wzStep=1; wzErrors={}; wzSubmitting=false; document.getElementById('wz-steps').style.display='flex'; renderStepsBar(); renderWizardBody(); document.getElementById('wizard-overlay').style.display='flex'; }
+function closeWizard(){ document.getElementById('wizard-overlay').style.display='none'; }
+document.getElementById('wizard-overlay').addEventListener('click', e=>{ if(e.target.id==='wizard-overlay') closeWizard(); });
+
+/* ---- Dashboard (rendered last, after all data sources exist) ---- */
+function renderDashboard(){
+  const cases = allCases();
+  const today = CAL_TODAY;
+  const weekday = today.toLocaleDateString('en-US', { weekday:'long' });
+  const dateStr = today.toLocaleDateString('en-US', { month:'long', day:'numeric' });
+
+  const openCases = cases.filter(c=>c.nextStep!=='—');
+  const attn = openCases.filter(c=>{
+    if(c.statusClass==='rfe'||c.statusClass==='audit') return true;
+    const d = new Date(c.nextDue);
+    if(!isNaN(d)){ const days=Math.round((d-today)/86400000); return days>=0 && days<=5; }
+    return false;
+  }).sort((a,b)=>{
+    const rank = c=> c.statusClass==='rfe'?0:(c.statusClass==='audit'?1:2);
+    return rank(a)-rank(b);
+  }).slice(0,4);
+
+  document.getElementById('today-sub').textContent = attn.length
+    ? weekday+', '+dateStr+' · '+attn.length+' item'+(attn.length>1?'s need':' needs')+' your attention today'
+    : weekday+', '+dateStr+" · You're all caught up — nothing urgent today";
+
+  document.getElementById('dash-needs-attention').innerHTML = attn.length ? attn.map(c=>{
+    const d = new Date(c.nextDue);
+    const daysAway = !isNaN(d) ? Math.round((d-today)/86400000) : null;
+    const urgent = c.statusClass==='rfe' || (daysAway!==null && daysAway<=1);
+    const dueLabel = daysAway===0 ? 'Due today' : (daysAway!==null ? 'Due '+c.nextDue : c.nextDue);
+    return `<div class="attn-row" onclick="openCase('${c.id}')">
+      <span class="attn-dot ${urgent?'urgent':'normal'}"></span>
+      <div class="attn-main">
+        <div class="attn-top"><span class="attn-name">${c.name}</span><span class="attn-due ${urgent?'':'normal'}">${dueLabel}</span></div>
+        <div class="attn-meta">${c.type} · ${c.statusLabel}</div>
+        <div class="attn-action">${c.nextStep} &rarr;</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="row" style="color:var(--sub);">Nothing needs attention right now.</div>';
+
+  const upcoming = openCases.filter(c=>{
+    const d = new Date(c.nextDue);
+    return !isNaN(d) && d>=today;
+  }).sort((a,b)=> new Date(a.nextDue)-new Date(b.nextDue)).slice(0,5);
+  document.getElementById('dash-upcoming').innerHTML = upcoming.length ? upcoming.map(c=>{
+    const d = new Date(c.nextDue);
+    const label = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return `<div class="upcoming-row" style="cursor:pointer;" onclick="openCase('${c.id}')">
+      <span class="upcoming-date">${label}</span>
+      <span><span class="upcoming-name">${c.name}</span> <span class="upcoming-type">· ${c.type} ${c.nextStep}</span></span>
+    </div>`;
+  }).join('') : '<div class="row" style="color:var(--sub);">Nothing scheduled in the next few days.</div>';
+
+  const recentNoti = notificationsData.filter(n=>canViewCase(n.caseId)).slice(0,4);
+  document.getElementById('dash-activity').innerHTML = recentNoti.map(n=>
+    `<div class="activity-row" style="cursor:pointer;" onclick="openNotiDetail('${n.id}')">
+      ${n.title}${casesData[n.caseId]?' · '+casesData[n.caseId].name:''}
+      <span class="activity-time">${n.timeAgo}</span>
+    </div>`).join('');
+
+  const unread = notificationsData.filter(n=>n.unread && canViewCase(n.caseId)).length;
+  const bd = document.getElementById('sidebar-bell-dot');
+  if(bd) bd.style.display = unread>0 ? 'block' : 'none';
+}
+renderDashboard();
+
+/* ---- Auth flow: login -> splash -> app ---- */
+(function(){
+  const form = document.getElementById('login-form');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const emailEl = document.getElementById('login-email');
+    const passEl = document.getElementById('login-password');
+    const emailField = document.getElementById('login-field-email');
+    const passField = document.getElementById('login-field-password');
+    const emailErr = document.getElementById('login-email-err');
+    const passErr = document.getElementById('login-password-err');
+    let valid = true;
+    if(!emailEl.value.trim()){ emailField.classList.add('has-error'); emailErr.style.display='flex'; valid=false; }
+    else { emailField.classList.remove('has-error'); emailErr.style.display='none'; }
+    if(!passEl.value.trim()){ passField.classList.add('has-error'); passErr.style.display='flex'; valid=false; }
+    else { passField.classList.remove('has-error'); passErr.style.display='none'; }
+    if(!valid) return;
+
+    document.getElementById('auth-login').style.display = 'none';
+    const splash = document.getElementById('auth-splash');
+    splash.style.display = 'flex';
+    setTimeout(function(){
+      document.getElementById('splash-status').textContent = 'Preparing your cases and tasks…';
+    }, 700);
+    setTimeout(function(){
+      splash.style.display = 'none';
+      document.querySelector('.app').style.display = 'flex';
+      if(typeof renderDashboard==='function') renderDashboard();
+    }, 1500);
+  });
+})();
+
+</script>
+</body>
+</html>

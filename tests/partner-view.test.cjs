@@ -10,7 +10,7 @@ function workspace() {
   virtualConsole.on('jsdomError', error => {
     if (!error.message.includes('window.scrollTo')) errors.push(error);
   });
-  const dom = new JSDOM(readFileSync(join(__dirname, '..', 'EZ-Follow-Website-Final-EN.html'), 'utf8'), {
+  const dom = new JSDOM(readFileSync(join(__dirname, '..', 'EZ-Follow-Prototype.html'), 'utf8'), {
     runScripts: 'dangerously', virtualConsole,
     beforeParse(window) { window.scrollTo = () => {}; }
   });
